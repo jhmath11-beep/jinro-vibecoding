@@ -4,86 +4,107 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>진로 바이브코딩 실습집</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400&display=swap">
 <style>
-  /* layout: 한 줄기 읽기 흐름 — 머리말 → 지도(표) → 난이도별 과제 → 배포·안전 수칙. 과제 카드는 왼쪽 설명 / 오른쪽 프롬프트 */
+  /* layout: 머리말(완성 화면 모자이크) → 지도 표 → 난이도별 과제(썸네일·설명 / 프롬프트) → 배포·안전 수칙 */
   :root {
     --bg:#F2F5F4; --surface:#FFFFFF; --ink:#18282A; --muted:#566664; --line:#D3DDDB; --soft:#E5EFED;
     --accent:#23756B; --lv1:#2E7D4F; --lv2:#2F5F9E; --lv3:#8A3E73; --html:#A0522D; --gas:#276A9C;
+    --hero:#13201F; --hero-ink:#EAF2F0;
     --display:"Gowun Batang", "Nanum Myeongjo", serif; --body:"IBM Plex Sans KR", "Malgun Gothic", sans-serif; --mono:"IBM Plex Mono", Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
     --bg:#121A1B; --surface:#1A2526; --ink:#E4ECEA; --muted:#9DB0AD; --line:#2E3D3E; --soft:#213031;
-    --accent:#5CC2B3; --lv1:#6BC98F; --lv2:#7FA8E6; --lv3:#D78BC0; --html:#E39A73; --gas:#79B8E3; color-scheme:dark } }
-  :root[data-theme="dark"] {
-    --bg:#121A1B; --surface:#1A2526; --ink:#E4ECEA; --muted:#9DB0AD; --line:#2E3D3E; --soft:#213031;
-    --accent:#5CC2B3; --lv1:#6BC98F; --lv2:#7FA8E6; --lv3:#D78BC0; --html:#E39A73; --gas:#79B8E3; color-scheme:dark }
+    --accent:#5CC2B3; --lv1:#6BC98F; --lv2:#7FA8E6; --lv3:#D78BC0; --html:#E39A73; --gas:#79B8E3; --hero:#0B1212; color-scheme:dark } }
   * { box-sizing:border-box }
   [hidden] { display:none !important }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 var(--body); padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:32px 64px }
-  .page { max-width:1080px; margin:0 auto; display:grid; gap:40px }
+  html { background:var(--bg) }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.7 var(--body) }
+  .wrap { max-width:1120px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)) }
+  .page { display:grid; gap:44px; padding-block:40px 72px }
   h1, h2, h3 { font-family:var(--display); text-wrap:balance; margin:0; line-height:1.3 }
-  h1 { font-size:clamp(1.9rem, 4vw, 2.6rem) }
   h2 { font-size:1.55rem }
-  h3 { font-size:1.25rem }
+  h3 { font-size:1.35rem }
   p { margin:0 }
   a { color:var(--accent) }
-  .lead { color:var(--muted); max-width:62ch; margin-top:10px }
+  .lead { color:var(--muted); max-width:64ch }
   .eyebrow { font-size:.8rem; letter-spacing:.06em; color:var(--muted); font-weight:600 }
-  code, .code { font-family:var(--mono); font-size:.88em }
-  .std { font-family:var(--mono); font-size:.8rem; color:var(--muted); background:var(--soft); border-radius:4px; padding:1px 6px; white-space:nowrap }
+  code { font-family:var(--mono); font-size:.88em }
+  .std { font-family:var(--mono); font-size:.8rem; color:var(--muted); background:var(--soft); border-radius:4px; padding:2px 8px; white-space:nowrap }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline:3px solid var(--accent); outline-offset:2px }
 
-  .tracks { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-top:20px }
+  /* 머리말: 완성 화면 9장을 먼저 보여 준다 */
+  .hero { background:var(--hero); color:var(--hero-ink); padding-block:48px 40px }
+  .hero-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.15fr); gap:40px; align-items:center }
+  @media (max-width:860px) { .hero-grid { grid-template-columns:minmax(0, 1fr) } }
+  .hero .eyebrow { color:#9FC3BC }
+  .hero h1 { font-size:clamp(2rem, 5vw, 3.1rem); margin-block:10px 14px }
+  .hero p.lead { color:#C3D6D2 }
+  .hero-stats { display:flex; flex-wrap:wrap; gap:10px 24px; margin-top:22px; font-size:.95rem; color:#C3D6D2 }
+  .hero-stats b { color:var(--hero-ink); font-size:1.4rem; font-family:var(--display); margin-right:4px }
+  .mosaic { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px }
+  .mosaic a { display:block; border-radius:8px; overflow:hidden; aspect-ratio:16 / 10; background:#223; position:relative }
+  .mosaic img { width:100%; height:100%; object-fit:cover; object-position:top; display:block; transition:transform .25s ease }
+  .mosaic a:hover img { transform:scale(1.05) }
+  .mosaic span { position:absolute; left:6px; bottom:6px; font-size:.72rem; font-weight:600; background:rgba(10,18,18,.82); color:#fff; border-radius:4px; padding:3px 8px }
+
+  .tracks { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px }
   .track { border-top:3px solid var(--html); padding-top:12px; display:grid; gap:4px }
   .track.gas { border-color:var(--gas) }
   .track b { font-size:1.05rem }
-  .levels { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px }
+  .levels { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px }
   .level { display:grid; gap:2px }
   .level b { font-family:var(--display); font-size:1.2rem }
+  .level.l1 b { color:var(--lv1) } .level.l2 b { color:var(--lv2) } .level.l3 b { color:var(--lv3) }
 
+  .stack { display:grid; gap:12px }
   .map { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface) }
   table { border-collapse:collapse; width:100%; min-width:720px; font-size:.92rem }
   th, td { padding:9px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top }
   th { font-weight:600; color:var(--muted); font-size:.82rem; letter-spacing:.03em }
   tr:last-child td { border-bottom:0 }
-  td.num { font-variant-numeric:tabular-nums; white-space:nowrap }
+  td.nowrap { white-space:nowrap }
 
-  .chip { display:inline-flex; align-items:center; gap:4px; font-size:.78rem; font-weight:600; border-radius:999px; padding:2px 10px; border:1px solid currentColor; white-space:nowrap }
+  .chip { display:inline-flex; align-items:center; font-size:.78rem; font-weight:600; border-radius:999px; padding:3px 10px; border:1px solid currentColor; white-space:nowrap }
   .chip.html { color:var(--html) } .chip.gas { color:var(--gas) }
   .chip.l1 { color:var(--lv1) } .chip.l2 { color:var(--lv2) } .chip.l3 { color:var(--lv3) }
 
   .filters { display:flex; flex-wrap:wrap; gap:8px; position:sticky; top:env(safe-area-inset-top, 0px); background:var(--bg); padding-block:10px; z-index:5 }
   body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:10; background:var(--bg) }
-  .filters button { font:inherit; font-size:.9rem; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 14px; cursor:pointer }
+  .filters button { font:inherit; font-size:.9rem; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 16px; cursor:pointer; min-height:40px }
   .filters button[aria-pressed="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink) }
-  button:focus-visible, a:focus-visible, summary:focus-visible { outline:3px solid var(--accent); outline-offset:2px }
 
-  .band { display:grid; gap:18px }
+  .bands { display:grid; gap:48px }
+  .band { display:grid; gap:20px }
   .band-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; border-bottom:2px solid var(--line); padding-bottom:8px }
   .band-head .lvmark { font-family:var(--display); font-size:2rem; line-height:1 }
   .band[data-l="1"] .lvmark { color:var(--lv1) } .band[data-l="2"] .lvmark { color:var(--lv2) } .band[data-l="3"] .lvmark { color:var(--lv3) }
   .band-head p { color:var(--muted) }
 
-  .task { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:22px; display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1.1fr); gap:24px }
-  @media (max-width:820px) { .task { grid-template-columns:minmax(0, 1fr) } }
-  .task-info { display:grid; gap:12px; align-content:start; min-width:0 }
+  .task { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; display:grid; grid-template-columns:minmax(0, .95fr) minmax(0, 1.05fr); gap:24px; scroll-margin-top:70px }
+  @media (max-width:860px) { .task { grid-template-columns:minmax(0, 1fr) } }
+  .task-info { display:grid; gap:14px; align-content:start; min-width:0 }
+  .shot { display:block; border-radius:10px; overflow:hidden; border:1px solid var(--line); aspect-ratio:16 / 10; position:relative; background:var(--soft) }
+  .shot img { width:100%; height:100%; object-fit:cover; object-position:top; display:block; transition:transform .3s ease }
+  .shot:hover img { transform:scale(1.03) }
+  .shot .play { position:absolute; right:10px; bottom:10px; background:var(--accent); color:var(--surface); font-weight:600; font-size:.85rem; border-radius:999px; padding:6px 14px }
   .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center }
   .task dl { display:grid; gap:10px; margin:0 }
   .task dt { font-size:.8rem; font-weight:600; color:var(--muted); letter-spacing:.03em }
   .task dd { margin:0 }
   .task ul { margin:0; padding-left:1.2em }
   .actions { display:flex; flex-wrap:wrap; gap:8px }
-  .btn { font:inherit; font-size:.9rem; text-decoration:none; border-radius:8px; padding:7px 14px; border:1px solid var(--accent); color:var(--accent); background:transparent; cursor:pointer }
+  .btn { font:inherit; font-size:.9rem; text-decoration:none; border-radius:8px; padding:8px 14px; border:1px solid var(--accent); color:var(--accent); background:transparent; cursor:pointer }
   .btn.solid { background:var(--accent); color:var(--surface) }
 
-  .prompts { display:grid; gap:12px; align-content:start; min-width:0 }
+  .prompts { display:grid; gap:14px; align-content:start; min-width:0 }
   .prompt { background:var(--soft); border-radius:10px; padding:14px 16px; display:grid; gap:8px }
   .prompt-top { display:flex; justify-content:space-between; align-items:center; gap:8px }
   .prompt-top span { font-size:.8rem; font-weight:600; color:var(--muted) }
-  .prompt p { white-space:pre-line; font-size:.95rem }
-  .copy { font:inherit; font-size:.78rem; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:6px; padding:2px 10px; cursor:pointer }
+  .prompt pre { white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere; font:.92rem/1.65 var(--body); margin:0; max-height:340px; overflow:auto }
+  .copy { font:inherit; font-size:.8rem; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:6px; padding:4px 12px; cursor:pointer }
   .next li { font-size:.92rem; margin-bottom:4px }
+  .level-note { font-size:.82rem; color:var(--muted) }
 
   details.src { grid-column:1 / -1; border-top:1px dashed var(--line); padding-top:12px }
   details.src summary { cursor:pointer; font-weight:600; color:var(--accent) }
@@ -92,45 +113,51 @@
   .guide { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px }
   .guide section { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; display:grid; gap:10px; align-content:start; min-width:0 }
   .guide ol, .guide ul { margin:0; padding-left:1.3em; display:grid; gap:6px }
-  .rules li b { color:var(--ink) }
   .rules { grid-column:1 / -1 }
   .src-list { font-size:.85rem; color:var(--muted) }
   .src-list ul { padding-left:1.2em; margin:6px 0 0 }
-  @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto } }
+  @media (prefers-reduced-motion: reduce) { .mosaic img, .shot img { transition:none } }
 </style>
 </head>
 <body>
-<div class="page">
-  <header>
-    <p class="eyebrow">2022 개정 교육과정 · 중학교 진로와 직업 · 진로교사 연수</p>
-    <h1>진로 바이브코딩 실습집</h1>
-    <p class="lead">성취기준에서 출발한 실습 과제 9개입니다. AI 채팅(ChatGPT·Gemini·Claude 등)에 <b>시작 프롬프트</b>를 붙여 넣고, <b>이어서 다듬기</b>로 고쳐 가며 완성합니다. 과제마다 완성 샘플이 있어 "이런 모습이 목표"라는 걸 먼저 보여 줄 수 있습니다.</p>
-    <div class="tracks">
-      <div class="track"><b>HTML + GitHub Pages</b><span>학생이 주소로 들어와 쓰는 수업 도구. 서버·로그인 없음. 개인정보를 저장하지 않는 활동에 씁니다.</span></div>
-      <div class="track gas"><b>구글 앱스스크립트</b><span>구글 폼·시트·문서·메일을 움직이는 업무 도구. 학교 계정 안에서만 돌아가 학생 정보를 다룰 수 있습니다.</span></div>
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">2022 개정 교육과정 · 중학교 진로와 직업 · 진로교사 연수</p>
+      <h1>진로 바이브코딩 실습집</h1>
+      <p class="lead">진로 시간과 진로 업무에 바로 쓰는 프로그램 9개를 AI와 함께 만들어 봅니다. 오른쪽 화면은 모두 이 실습집의 완성 샘플이고, 눌러서 직접 써 볼 수 있습니다. 과제마다 그 수준이 나오는 <b>시작 프롬프트</b>와 <b>다듬기 프롬프트</b>를 드립니다.</p>
+      <div class="hero-stats"><span><b>9</b>과제</span><span><b>3</b>난이도</span><span><b>2</b>트랙 · HTML / 앱스스크립트</span></div>
     </div>
-  </header>
+    <nav class="mosaic" id="mosaic" aria-label="완성 샘플 미리보기"></nav>
+  </div>
+</header>
 
-  <section class="levels" aria-label="난이도 기준">
-    <div class="level"><b style="color:var(--lv1)">하 · 25분</b><span>프롬프트 1~3번, 화면 하나, 저장 없음</span></div>
-    <div class="level"><b style="color:var(--lv2)">중 · 50분</b><span>입력 → 계산 → 그래프·피드백, 데이터 표 다루기</span></div>
-    <div class="level"><b style="color:var(--lv3)">상 · 90분</b><span>여러 단계, 저장·여러 사용자·문서 자동 생성</span></div>
+<main class="wrap page">
+  <section class="tracks" aria-label="두 가지 트랙">
+    <div class="track"><b>HTML + GitHub Pages</b><span>학생이 주소로 들어와 쓰는 수업 도구. 서버·로그인 없이 파일 하나로 끝납니다. 학생 개인정보를 저장하지 않는 활동에 씁니다.</span></div>
+    <div class="track gas"><b>구글 앱스스크립트</b><span>구글 폼·시트·캘린더·메일을 움직이는 업무 도구. 학교 계정 안에서 돌아가 학생 정보를 다룰 수 있습니다. 샘플은 <b>미리보기 모드</b>라 예시 데이터로 바로 체험됩니다.</span></div>
   </section>
 
-  <section style="display:grid;gap:12px">
-    <h2>성취기준 지도</h2>
+  <section class="levels" aria-label="난이도 기준">
+    <div class="level l1"><b>하 · 30분</b><span>시작 프롬프트 1번 + 다듬기 1~2번. 화면 하나, 결과가 바로 보임</span></div>
+    <div class="level l2"><b>중 · 50분</b><span>여러 단계 흐름, 끌기·그래프·시트 데이터 다루기</span></div>
+    <div class="level l3"><b>상 · 90분</b><span>여러 사용자·자동 처리·개인정보 보호까지 챙기는 업무 도구</span></div>
+  </section>
+
+  <section class="stack">
+    <h2>한눈에 보기</h2>
     <div class="map"><table>
-      <thead><tr><th>과제</th><th>난이도</th><th>트랙</th><th>성취기준</th><th>누가 쓰나</th></tr></thead>
+      <thead><tr><th>과제</th><th>난이도</th><th>트랙</th><th>성취기준 · 업무</th><th>누가 쓰나</th></tr></thead>
       <tbody id="mapBody"></tbody>
     </table></div>
   </section>
 
   <nav class="filters" id="filters" aria-label="과제 거르기"></nav>
-  <div id="bands" style="display:grid;gap:40px"></div>
+  <div class="bands" id="bands"></div>
 
-  <section style="display:grid;gap:12px">
+  <section class="stack">
     <h2>더 만들어 볼 과제 아이디어</h2>
-    <p class="lead" style="margin:0">위 9개를 끝낸 선생님이나, 다른 성취기준으로 바꿔 보고 싶은 모둠에게 줍니다.</p>
+    <p class="lead">9개를 끝낸 선생님이나, 다른 성취기준으로 바꿔 보고 싶은 모둠에게 줍니다.</p>
     <div class="map"><table>
       <thead><tr><th>성취기준</th><th>아이디어</th><th>트랙 · 난이도</th></tr></thead>
       <tbody id="ideaBody"></tbody>
@@ -141,31 +168,32 @@
     <section>
       <h2>GitHub Pages로 배포하기</h2>
       <ol>
-        <li>github.com 가입 → 오른쪽 위 <b>+ › New repository</b>, 이름(예: <code>day-balance</code>), <b>Public</b>으로 만들기</li>
-        <li><b>Add file › Upload files</b>로 AI가 만든 파일을 올리기. 파일 이름은 반드시 <code>index.html</code></li>
+        <li>github.com 가입 → 오른쪽 위 <b>+ › New repository</b>, 이름(예: <code>job-worldcup</code>), <b>Public</b>으로 만들기</li>
+        <li><b>Add file › Upload files</b>로 AI가 만든 파일을 올리기. 파일 이름은 <code>index.html</code></li>
         <li><b>Settings › Pages</b> → Branch를 <code>main</code> / <code>(root)</code>로 두고 Save</li>
-        <li>1~2분 뒤 <code>https://아이디.github.io/day-balance/</code> 주소가 생김 → QR로 만들어 학생에게 배포</li>
-        <li>고칠 때는 같은 이름으로 다시 업로드(덮어쓰기)하면 주소는 그대로</li>
+        <li>1~2분 뒤 <code>https://아이디.github.io/job-worldcup/</code> 주소가 생김 → QR로 만들어 학생에게</li>
+        <li>고칠 때는 같은 이름으로 다시 올리면 주소는 그대로</li>
       </ol>
     </section>
     <section>
-      <h2>앱스스크립트 실행하기</h2>
+      <h2>앱스스크립트 웹앱 만들기</h2>
       <ol>
-        <li>구글 시트 › <b>확장 프로그램 › Apps Script</b> → 기존 코드 지우고 붙여넣기 → 저장(디스크 아이콘)</li>
-        <li>처음 실행하면 권한 승인 창이 뜸 → 계정 선택 → "확인되지 않은 앱"이면 <b>고급 › (프로젝트 이름)으로 이동</b></li>
-        <li>폼 제출 때 자동 실행: 왼쪽 <b>트리거(시계)</b> › 트리거 추가 › 이벤트 "양식 제출 시"</li>
-        <li>웹앱: <b>배포 › 새 배포 › 웹 앱</b>. 코드를 고친 뒤엔 <b>배포 관리 › 수정 › 새 버전</b>을 해야 반영</li>
-        <li>오류가 나면 빨간 메시지를 통째로 복사해 AI에게 "이 오류 고쳐줘"</li>
+        <li>구글 시트 › <b>확장 프로그램 › Apps Script</b> → <code>Code.gs</code>에 코드 붙여넣기</li>
+        <li>왼쪽 <b>+ › HTML</b>로 파일을 만들고 이름을 <code>index</code>로 → 화면 코드 붙여넣기 → 저장</li>
+        <li><b>배포 › 새 배포 › 웹 앱</b>. 실행 사용자와 액세스 범위는 각 Code.gs 맨 위 주석대로</li>
+        <li>처음엔 권한 승인 창이 뜸 → "확인되지 않은 앱"이면 <b>고급 › (프로젝트 이름)으로 이동</b></li>
+        <li>코드를 고친 뒤엔 <b>배포 관리 › 수정 › 새 버전</b>을 해야 반영. 오류는 메시지를 통째로 AI에게</li>
       </ol>
     </section>
     <section class="rules">
       <h2>진로 실습 안전 수칙</h2>
       <ul>
-        <li><b>학생 이름·검사 결과는 GitHub에 올리지 않기.</b> GitHub Pages는 공개 주소입니다. 개인정보가 들어가는 과제는 앱스스크립트(학교 계정)로만 만듭니다.</li>
+        <li><b>학생 이름·검사 결과는 GitHub에 올리지 않기.</b> GitHub Pages는 공개 주소입니다. 개인정보가 들어가는 과제는 앱스스크립트(학교 계정)로만 만들고, 배포 접근 범위를 꼭 확인합니다.</li>
         <li><b>표준화 심리검사 문항을 AI에게 베끼게 하지 않기.</b> 커리어넷·고용24(구 워크넷) 검사 문항과 MBTI 등은 저작권이 있습니다. 문항은 새로 만들고, 공식 검사는 <b>결과값만</b> 옮겨 적어 분석합니다.</li>
-        <li><b>결과로 학생을 단정하지 않기.</b> "너는 ○○형이니 ○○ 해야 해" 대신 "이런 경향이 보이네, 어떻게 생각해?"로 쓰도록 프롬프트에 넣습니다.</li>
-        <li><b>AI가 쓴 진로 정보는 공식 출처로 확인하기.</b> 고교 유형·입시·직업 전망은 바뀌고 AI가 틀리기 쉽습니다. 고입정보포털·커리어넷·고교학점제 누리집과 대조합니다.</li>
-        <li><b>API 키·비밀번호를 HTML에 넣지 않기.</b> 커리어넷 오픈API처럼 키가 필요한 기능은 앱스스크립트의 스크립트 속성에 보관합니다.</li>
+        <li><b>결과로 학생을 단정하지 않기.</b> "너는 ○○형이니 ○○ 해야 해" 대신 "이런 경향이 보여요. 어떻게 생각해요?"로 쓰도록 프롬프트에 넣습니다.</li>
+        <li><b>생활기록부는 교사가 쓰는 것.</b> 초안 도우미는 교사의 관찰 기록을 정리할 뿐입니다. 분량·바이트·기재 금지 항목은 해당 학년도 기재요령으로 확인하고, 교사가 최종 검토한 뒤 NEIS에 직접 입력합니다.</li>
+        <li><b>생성형 AI·학교 계정 정책 확인하기.</b> 학생 기록을 외부 AI로 보내도 되는지, 무료 AI 서비스가 입력 내용을 어떻게 쓰는지는 교육청·학교 지침과 서비스 약관을 확인합니다. 학교 계정 정책에 따라 웹앱 배포나 외부 호출이 막힐 수도 있습니다.</li>
+        <li><b>API 키·비밀번호를 HTML에 넣지 않기.</b> 키가 필요한 기능은 앱스스크립트의 스크립트 속성에 보관합니다.</li>
       </ul>
     </section>
   </div>
@@ -175,179 +203,242 @@
     <ul>
       <li>교육부·한국교육과정평가원, 2022 개정 교육과정에 따른 성취수준(중학교 진로와 직업)</li>
       <li><a href="https://www.career.go.kr" target="_blank" rel="noopener">커리어넷</a> 진로심리검사(직업흥미·직업적성·직업가치관·진로성숙도·진로개발역량)와 <a href="https://www.career.go.kr/cnet/front/openapi/openApiMajorCenter.do" target="_blank" rel="noopener">오픈API 센터</a></li>
-      <li><a href="https://www.hischool.go.kr" target="_blank" rel="noopener">고입정보포털</a>, <a href="https://www.hscredit.kr" target="_blank" rel="noopener">고교학점제 누리집</a>, <a href="https://www.hifive.go.kr" target="_blank" rel="noopener">HiFive</a></li>
+      <li><a href="https://www.hischool.go.kr" target="_blank" rel="noopener">고입정보포털</a>, <a href="https://www.hscredit.kr" target="_blank" rel="noopener">고교학점제 누리집</a></li>
+      <li>샘플 속 인물·학교·도시·수치는 모두 수업용 가상 자료입니다. 샘플 코드는 저장소 <a href="https://github.com/jhmath11-beep/jinro-vibecoding" target="_blank" rel="noopener">jinro-vibecoding</a>에서 내려받을 수 있습니다.</li>
     </ul>
   </footer>
-</div>
+</main>
 
 <script>
 const LV = { 1:'하', 2:'중', 3:'상' };
 const TR = { html:'HTML + GitHub', gas:'앱스스크립트' };
+const GAS = 'samples/apps-script/';
 const TASKS = [
-  { id:'h1', l:1, t:'html', name:'나의 하루 균형표', std:['9진로01-04'], who:'학생 수업',
-    what:'평일 하루 24시간을 "지금"과 "바라는 하루"로 나눠 원그래프로 비교하고, 여가의 의미를 적습니다.',
-    use:'일과 여가 단원 도입. 그래프를 캡처해 모둠에서 "여가가 일을 어떻게 돕나" 토의.',
-    done:['합계가 24시간이 아니면 알려 준다','두 원그래프가 나란히 보인다','휴대폰에서 깨지지 않는다'],
-    sample:'samples/h1-day-balance.html',
-    prompt:`중학생용 '나의 하루 균형표' 웹페이지를 HTML 파일 하나로 만들어줘.
-- 수면, 학교·공부, 일·집안일, 여가·취미, 이동·식사·기타 5개 항목 시간을 슬라이더로 입력
-- '지금 나의 하루'와 '내가 바라는 하루'를 나란히 두고 각각 원그래프로 보여줘
-- 합계가 24시간이 아니면 몇 시간 남거나 넘치는지 알려줘
-- 아래에 '나에게 여가란?'을 적는 칸
-- 외부 라이브러리 없이, 휴대폰에서도 잘 보이게`,
-    next:['두 하루의 차이가 큰 항목을 문장으로 알려줘','주말 하루 탭을 추가해줘','차분한 초록 계열로 색을 바꿔줘'] },
-  { id:'h2', l:1, t:'html', name:'직업인 카드 탐색', std:['9진로01-01','9진로01-03'], who:'학생 수업',
-    what:'직업 24개를 카드로 보여 주고, 뒤집으면 하는 일·필요한 역량·"함께 일하고 싶은 직업인의 자세"가 나옵니다. 흥미 유형별로 거를 수 있습니다.',
-    use:'다양한 직업인 탐색 후 고른 카드의 공통점 발표. 관심 분야 밖 카드도 1장씩 고르게 하기.',
-    done:['흥미 유형 버튼으로 걸러진다','검색이 된다','고른 카드가 아래에 모인다'],
-    sample:'samples/h2-job-cards.html',
-    prompt:`중학교 진로 수업용 '직업인 카드 탐색' 웹페이지를 HTML 파일 하나로 만들어줘.
-- 직업 24개를 카드로 보여줘. 카드 앞면은 직업 이름과 흥미 유형(현실·탐구·예술·사회·진취·관습 중 1~2개)
-- 카드를 누르면 '하는 일', '필요한 역량', '함께 일하고 싶은 직업인의 자세'가 펼쳐져
-- 위쪽에 흥미 유형 거르기 버튼과 검색창
-- 마음에 드는 카드에 별표를 하면 아래에 모아 보여주고 "공통점은?"이라고 물어봐
-- 직업 설명은 중학생 눈높이로 짧게`,
-    next:['우리 지역 산업과 관련된 직업 6개를 더 넣어줘','카드 뒷면에 "이 직업인에게 하고 싶은 질문" 칸을 추가해줘','모둠 대항 "흥미 유형 맞히기" 퀴즈 모드를 만들어줘'] },
-  { id:'h3', l:1, t:'gas', name:'진로상담 신청 알림', std:['상담 업무'], who:'교사 업무',
-    what:'구글 폼으로 진로상담 신청이 들어오면 담당 교사에게 바로 메일이 오고, 시트에 "처리 상태" 칸이 자동으로 생깁니다.',
-    use:'상담 신청 누락 방지. 처음 앱스스크립트를 만져 보는 선생님의 첫 과제.',
-    done:['폼을 제출하면 1분 안에 메일이 온다','시트에 "처리 상태: 접수"가 찍힌다','트리거를 스스로 설정했다'],
-    code:'samples/apps-script/h3-counsel-alert.gs',
-    prompt:`구글 폼으로 진로상담 신청을 받고 있어. 문항은 학년, 반, 이름, 상담 희망 주제, 희망 날짜야.
-응답이 들어올 때마다 나에게 메일로 알려주는 구글 앱스스크립트를 만들어줘.
-- 메일 제목에 학년·반·이름·주제가 보이게
-- 응답 시트의 그 행 옆에 '처리 상태' 칸을 만들고 '접수'라고 적어줘
-- 코드를 어디에 붙여넣고 트리거를 어떻게 거는지 처음 하는 사람도 따라 할 수 있게 단계별로 알려줘`,
-    next:['상담 날짜를 내 구글 캘린더에 일정으로도 넣어줘','학생에게도 "신청 접수됨" 확인 메일을 보내줘 (학교 계정 이메일 수집 켜기)','처리 상태를 "완료"로 바꾸면 학생에게 알림 가게 해줘'] },
+  { id:'h1', l:1, t:'html', name:'직업 월드컵', std:['9진로01-01'], who:'학생 수업',
+    what:'직업 32개 중 무작위 16개로 16강부터 결승까지 이상형 월드컵을 합니다. 진한 무대에 스포트라이트와 VS 연출, 우승 직업과 함께 지금까지 고른 직업들의 흥미 유형 경향을 육각형 그래프로 보여 줍니다.',
+    use:'진로 수업 도입 5분. TV에 띄워 반 전체가 손을 들어 고르거나, 학생 각자 태블릿으로 한 뒤 우승 직업과 4강을 짝과 비교합니다.',
+    done:['15번 고르면 우승 화면이 나오고, 다시 하면 대진이 매번 달라진다','유형 경향에 "참고용" 표시와 단정하지 않는 말투가 있다','휴대폰에서는 카드가 위아래로, TV에서는 좌우로 놓이고 멀리서도 읽힌다'],
+    sample:'samples/h1-job-worldcup.html',
+    prompt:`중학생 진로 수업용 '직업 월드컵'을 HTML 파일 하나로 만들어 줘. 외부 라이브러리 없이, 글꼴은 Pretendard와 제목용 Black Han Sans만 써.
+내용: 직업 32개(현실·탐구·예술·사회·진취·관습 6유형에 고르게 나눠서. 이모지, 직업명, 중학생 눈높이의 한 줄 설명, 유형 하나씩)를 배열로 넣고, 시작할 때마다 섞어서 16개만 뽑아 16강→8강→4강→결승으로 진행해.
+디자인: 남색 밤하늘 같은 진한 무대 배경에 위에서 비추는 스포트라이트 두 개(radial-gradient, 천천히 흔들림). 두 카드 사이에 핑크색 원형 'VS' 배지. 직업명은 TV로 멀리서도 읽히게 크게(clamp로 최대 3rem). 768px 이상에서는 카드 좌우, 그보다 작으면 위아래.
+인터랙션: 카드는 좌우에서 미끄러지듯 등장하고, 고른 카드는 커지며 금색으로 빛나고 진 카드는 흐려진 뒤 0.4초 후 다음 경기로 넘어가. 키보드 ←→로도 고를 수 있게. 위에 '16강 3/8 경기'와 15칸짜리 진행 막대를 보여 줘.
+결과: 우승 카드에 왕관과 색종이 효과. 고를 때마다 그 직업 유형에 1점씩 쌓아 6유형 육각형 그래프(SVG)로 그리고 '참고용' 표시. "○○ 쪽 직업을 고른 경우가 많은 경향이 보여요. 어떻게 생각해요?"처럼 단정하지 않는 말투로. 4강에 오른 직업 목록과 '새 대진으로 다시 하기' 버튼.
+접근성: 터치 대상 44px 이상, :focus-visible 표시, prefers-reduced-motion이면 애니메이션을 꺼.`,
+    next:['고른 직업만 모아 "내 관심 직업 목록"으로 한 번에 복사하는 버튼을 넣어 줘','직업 목록을 우리 학교 진로 주제(예: 미래 직업)로 바꿔서 32개 다시 만들어 줘','진행 막대 옆에 "한 경기 되돌리기" 버튼을 넣어 줘'] },
 
-  { id:'m1', l:2, t:'html', name:'흥미 육각형 탐색', std:['9진로01-02'], who:'학생 수업',
-    what:'6가지 흥미 유형 간이 체크 30문항에 답하거나, 커리어넷 직업흥미검사 점수를 옮겨 적으면 육각형 그래프와 흥미 코드(예: IA)를 보여 줍니다.',
-    use:'커리어넷 검사 전 워밍업 → 검사 후 실제 점수를 넣어 비교. "점수 차이가 작으면 흥미가 넓게 열려 있다"는 긍정적 해석 연습.',
-    done:['문항은 AI가 새로 만든 것(표준화 검사 문항 아님)','육각형이 점수에 맞게 그려진다','"공식 검사 아님" 안내가 있다'],
-    sample:'samples/m1-riasec.html',
-    prompt:`중학생이 자기 흥미를 탐색하는 '흥미 육각형' 웹페이지를 HTML 파일 하나로 만들어줘.
-- 흥미 유형 6가지(현실형·탐구형·예술형·사회형·진취형·관습형), 유형별 5문항씩 총 30문항을 5점 척도로
-- 문항은 네가 새로 만들어줘. 기존 표준화 심리검사 문항을 베끼지 마
-- 결과는 SVG 육각형(레이더) 그래프로, 점수 상위 2개 유형으로 흥미 코드(예: IA)를 보여주고 각 유형 설명과 관련 직업 예시
-- 다른 탭에서는 커리어넷 직업흥미검사 결과 점수 6개를 직접 입력해 같은 그래프로 볼 수 있게
-- 결과를 단정하지 말고 "이런 경향이 있어요" 말투로, 맨 아래 '공식 검사가 아님' 안내`,
-    next:['간이 체크 결과와 커리어넷 결과를 한 그래프에 겹쳐 보여줘','모든 점수 차이가 작을 때 해석 문장을 추가해줘','결과 화면만 크게 보이는 "발표 모드" 버튼'] },
-  { id:'m2', l:2, t:'gas', name:'검사 결과 학급 집계', std:['9진로01-02'], who:'교사 업무',
-    what:'학생이 폼에 커리어넷 검사 결과(흥미 1·2순위, 가치관 1순위)를 적으면, 메뉴 한 번으로 학급 분포 차트와 학생별 한 줄 피드백 시트가 만들어집니다.',
-    use:'학급 전체 흥미 분포를 보고 수업 활동 조정, 개인 피드백은 상담 전 자료로. 담임에게 학급 요약 공유.',
-    done:['시트 위에 "진로 분석" 메뉴가 생긴다','학급 분포 막대 차트가 그려진다','학생별 피드백 문장이 채워진다'],
-    code:'samples/apps-script/m2-test-summary.gs',
-    prompt:`학생들이 구글 폼에 커리어넷 검사 결과를 입력했어. 문항은 학번, 이름, 흥미 1순위, 흥미 2순위, 가치관 1순위야.
-흥미는 현실형/탐구형/예술형/사회형/진취형/관습형 중 하나를 고르는 객관식이야.
-이 응답 시트에 붙일 구글 앱스스크립트를 만들어줘.
-- 시트 위에 '진로 분석' 메뉴를 만들고 '집계 만들기'를 누르면
-- '학급 분포' 시트: 흥미 유형별 1순위·2순위 인원 표와 막대 차트, 가치관 1순위 빈도표
-- '개인 피드백' 시트: 학생마다 흥미 코드와 '이런 활동을 해 보자'는 한 줄 피드백
-- 다시 눌러도 중복되지 않게 시트를 새로 써줘`,
-    next:['반 열을 추가해서 반별로 비교하는 표를 만들어줘','진로성숙도검사 학기 초·학기 말 점수를 비교하는 시트를 추가해줘','피드백 문장을 유형 조합(예: 탐구+예술)별로 더 구체적으로'] },
-  { id:'m3', l:2, t:'html', name:'고등학교 유형 나침반', std:['9진로02-05'], who:'학생 수업',
-    what:'"고등학교에서 하고 싶은 것" 6문항에 답하면 어울릴 수 있는 고교 유형 3개와 꼭 확인할 점을 보여 주고, 유형별 비교표를 제공합니다.',
-    use:'3학년 고입 진로 지도. 결과 3개를 고입정보포털에서 실제 학교로 찾아보는 활동으로 이어 가기.',
-    done:['고교 유형 설명을 공식 사이트와 대조했다','결과가 "판정"이 아니라는 안내가 있다','비교표가 휴대폰에서 옆으로 스크롤된다'],
-    sample:'samples/m3-highschool.html',
-    prompt:`중학교 3학년용 '고등학교 유형 나침반' 웹페이지를 HTML 파일 하나로 만들어줘.
-- 고교 유형: 일반고, 자율형 공립고, 자율형 사립고, 과학고, 영재학교, 외국어고·국제고, 예술고·체육고, 마이스터고, 특성화고
-- "고등학교에서 나는…" 질문 6개를 슬라이더(0~4)로 답하면 유형별 점수를 계산해 상위 3개를 보여줘
-- 각 유형의 특징, 이런 학생에게 맞음, 꼭 확인할 점을 표로도 보여줘
-- 입시 일정·경쟁률처럼 해마다 바뀌는 정보는 넣지 말고 고입정보포털·고교학점제 누리집 링크로 안내
-- 결과는 판정이 아니라는 안내 문구`,
-    next:['우리 지역(○○시) 고등학교 목록을 넣을 수 있는 칸을 만들어줘','고교학점제에서 관심 진로별로 들을 만한 선택 과목 예시를 보여줘','결과를 친구와 비교하는 모둠 토의 질문 3개'] },
+  { id:'h2', l:1, t:'html', name:'20년 후 나의 명함', std:['9진로03-04','9진로01-02'], who:'학생 수업',
+    what:'이름, 미래 직업, 가상 회사, 좌우명, 강점 3개를 적으면 종이 질감과 금박 느낌의 명함이 바로 바뀌어 보입니다. 누르면 앞뒤로 뒤집히고, 앞뒷면을 PNG 한 장으로 저장합니다.',
+    use:'진로 설계 단원 마무리. 저장한 명함을 패들렛에 올려 갤러리 워크를 하거나 인쇄해 교실 게시판에 붙입니다.',
+    done:['입력하면 미리보기가 바로 바뀌고, 빈칸은 흐린 예시 문구로 채워진다','명함을 누르면 앞뒤가 뒤집히고, 템플릿 4개를 바꿀 수 있다','PNG에 화면과 같은 글꼴이 들어가고, 아이폰용 "길게 눌러 저장" 안내가 있다'],
+    sample:'samples/h2-future-card.html',
+    prompt:`중학생이 '20년 후 나의 명함'을 만드는 HTML 파일 하나를 만들어 줘. 외부 라이브러리 없이, 글꼴은 Pretendard와 명조 느낌의 Gowun Batang만 써.
+입력: 이름, 20년 후 직업, 가상 회사 이름, 좌우명, 강점 3칸. 강점 아래에 '호기심, 끈기, 공감…' 같은 예시 칩을 두고, 누르면 빈칸에 들어가게.
+미리보기: 실제 명함 비율(5:3) 카드. 앞면은 회사 첫 글자로 만든 동그란 로고, 회사명, 'SINCE 2046', 큰 이름, 직업. 뒷면은 따옴표 친 좌우명, 금색 가는 선, 'MY STRENGTHS'와 강점 3개. 입력 즉시 반영하고 바뀐 글자는 살짝 통통 튀게. 빈칸이면 예시 문구(가상 인물)를 흐리게 보여 주고 "흐린 글씨는 예시예요"라고 안내해.
+디자인: 책상 위에 놓인 진짜 종이 명함처럼. SVG feTurbulence 노이즈로 종이 결, 여러 겹의 부드러운 그림자, 이름과 로고는 금박처럼 그라데이션이 비치고 마우스를 올리면 빛이 흐르게. 템플릿 4개(금박 크림, 모던 화이트, 크래프트지, 남색에 은박). 카드 안 글자 크기는 cqw 단위로 해서 화면 크기가 바뀌어도 비율이 같게.
+인터랙션: 카드를 누르면 3D로 앞뒤가 뒤집혀(0.6초). 좌우명·강점을 입력하는 동안에는 자동으로 뒷면을 보여 줘.
+저장: 'PNG로 저장'을 누르면 document.fonts.ready를 기다린 뒤, 캔버스에 앞면과 뒷면을 위아래로 다시 그려서 다운로드해. 아이폰 대비로 같은 이미지를 대화상자에 띄우고 "다운로드가 안 되면 이미지를 길게 눌러 저장하세요"라고 써 줘.
+360px에서 가로 스크롤 없이, 버튼은 44px 이상, prefers-reduced-motion이면 애니메이션을 꺼.`,
+    next:['휴대폰에서 입력할 때도 명함이 보이게 미리보기를 화면 위쪽에 고정해 줘','앞면에 "전문 분야" 한 줄과 가상 이메일(@example.com)을 추가해 줘','템플릿마다 박 색을 고를 수 있게 금·은·로즈골드 버튼을 넣어 줘'] },
 
-  { id:'s1', l:3, t:'gas', name:'진로 활동 포트폴리오', std:['9진로02-04','9진로03-04'], who:'학생 + 교사',
-    what:'학생이 학교 계정으로 웹앱에 들어와 진로 활동(체험·독서·동아리 등)과 "배운 점·진로 연결"을 기록하고 자기 기록만 봅니다. 교사는 시트에서 전체를 보고 영역별 통계를 냅니다.',
-    use:'1년 내내 쌓는 진로 포트폴리오. 학기 말 학생부 기재 참고 자료, 상담 때 학생 기록 함께 보기.',
-    done:['학생 A가 학생 B 기록을 볼 수 없다','빈 활동명은 서버에서 막는다','교사 통계 시트가 만들어진다'],
-    code:['samples/apps-script/s1-portfolio-Code.gs','samples/apps-script/s1-portfolio-index.html'],
-    prompt:`구글 앱스스크립트 웹앱으로 '나의 진로 포트폴리오'를 만들어줘. 우리 학교는 구글 워크스페이스를 써.
-- 학생은 학교 계정으로 접속해서 날짜, 영역(자기이해/직업체험/진로정보 탐색/동아리·봉사/학습·독서/기타), 활동명, 배운 점, 진로와의 연결을 기록
-- 기록은 스프레드시트 '기록' 시트에 이메일과 함께 쌓이고, 학생은 자기 기록만 최신순으로 봐
-- 서버 쪽에서 입력값을 다시 검사해줘 (빈 활동명, 없는 영역, 너무 긴 글)
-- 교사가 실행하면 학생별·영역별 기록 수를 '통계' 시트로 만드는 함수도
-- Code.gs와 index.html 두 파일로 주고, 배포 설정(실행 사용자, 액세스 범위)을 왜 그렇게 하는지 설명해줘`,
-    next:['기록에 사진 한 장을 올리면 드라이브 폴더에 저장되게 해줘','교사용 화면을 따로 만들어 학생 이름으로 검색하게 해줘','학기 말에 학생별 기록을 구글 문서 한 장으로 묶어줘'] },
-  { id:'s2', l:3, t:'html', name:'진로 결정 저울', std:['9진로03-01','9진로03-02'], who:'학생 수업',
-    what:'후보 직업 3개를 흥미·적성·가치관·전망 등 기준과 중요도로 점수를 매겨 비교하고, 1위는 우선 경로·2위는 대안 경로로 "고등학교 → 졸업 후 → 직업 → 지금 할 일" 로드맵을 씁니다.',
-    use:'진로의사결정 단원. 성취수준 A의 "우선 경로와 대안 경로 설정"을 직접 해 보는 활동. 결과를 글로 복사해 학습지에 붙이기.',
-    done:['중요도를 바꾸면 순위가 바로 바뀐다','새로고침해도 입력이 남는다','우선·대안 경로 로드맵이 글로 복사된다'],
-    sample:'samples/s2-decision-roadmap.html',
-    prompt:`중학생 진로의사결정 도구 '진로 결정 저울'을 HTML 파일 하나로 만들어줘.
-1단계: 후보 직업 3개와 기준 6개(흥미, 적성, 가치관, 미래 전망, 준비 가능성, 일과 삶의 균형)를 표로. 기준마다 중요도 1~5, 직업마다 점수 1~5
-2단계: 가중 합계를 100점 만점으로 바꿔 막대그래프로, 1위·2위 색을 다르게
-3단계: 1위는 '우선 경로', 2위는 '대안 경로'로 각각 고등학교 / 졸업 후 / 직업 목표 / 지금 당장 할 일 칸을 채우게
-4단계: 전체 결과를 글로 정리해서 복사 버튼
-- 직업 이름과 기준 이름도 고칠 수 있게, 입력은 localStorage에 저장
-- 경로는 바뀔 수 있다는 안내 문구`,
-    next:['후보를 5개까지 늘리고 줄이는 버튼을 만들어줘','"부모님 생각" 기준을 넣고 가족과 함께 점수를 매기는 모드','로드맵을 학년별 타임라인 그림으로 보여줘'] },
-  { id:'s3', l:3, t:'gas', name:'검사 종합 리포트 자동 생성', std:['9진로01-02','상담 업무'], who:'교사 업무',
-    what:'시트에 정리한 학생별 흥미·적성·가치관 검사 결과를 구글 문서 템플릿에 채워 학생마다 해석 리포트(문서+PDF)를 한 번에 만들고, 링크를 시트에 적어 둡니다.',
-    use:'검사 후 개별 상담 자료, 학부모 상담 안내문. 30명 리포트를 손으로 쓰던 시간을 몇 분으로.',
-    done:['템플릿의 {{이름}} 등 자리표시가 모두 바뀐다','이미 만든 학생은 건너뛴다','6분 실행 제한에 걸리면 다시 실행해 이어서 만든다'],
-    code:'samples/apps-script/s3-report-docs.gs',
-    prompt:`진로 심리검사 결과로 학생별 리포트를 자동으로 만드는 구글 앱스스크립트를 만들어줘.
-- 시트 '결과' 열: 학번, 이름, 흥미코드(예: 탐구형·예술형), 적성 강점, 가치관 1순위, 가치관 2순위, 희망 직업, 리포트
-- 구글 문서 템플릿에 {{이름}} {{흥미코드}} {{흥미해석}} {{적성}} {{가치관}} {{희망직업}} {{연결질문}} 자리표시가 있어
-- 학생마다 템플릿을 복사해서 자리표시를 채우고, PDF도 만들어 지정 폴더에 저장, PDF 링크를 '리포트' 열에 적어줘
-- 흥미 유형별 해석 문장은 단정하지 않는 말투로 코드 안에 사전으로
-- 이미 리포트가 있는 행은 건너뛰고, 실행 시간 제한(6분)에 걸리지 않게 처리
-- 시트 메뉴 '리포트 > 전체 만들기'로 실행`,
-    next:['학생 이메일 열을 추가해서 각자에게 PDF 링크를 메일로 보내줘 (보내기 전 미리보기 단계 포함)','리포트에 흥미 점수 막대 차트 이미지를 넣어줘','해석 문장을 AI(Gemini API)로 만들되, 키는 스크립트 속성에 두고 이름은 보내지 않게'] },
+  { id:'h3', l:1, t:'gas', name:'진로상담 예약', std:['상담 업무'], who:'학생 + 교사',
+    what:'학생이 학교 계정으로 들어와 이번 주 상담 가능 시간을 달력 칸으로 보고, 빈 칸을 눌러 주제를 고르면 예약됩니다. 선생님께 메일이 가고 구글 캘린더에 일정이 들어갑니다. 내 예약은 확인하고 취소할 수 있습니다.',
+    use:'진로상담 신청을 시간 조율 없이 받기. 학기 초 상담 주간, 고입 상담 시즌에 특히 편합니다.',
+    done:['두 학생이 같은 칸을 동시에 눌러도 한 명만 예약되고, 다른 한 명은 안내를 받는다','학생 화면에 다른 학생의 이메일·주제가 보이지 않는다','내 예약을 취소하면 칸이 다시 "가능"이 되고 캘린더 일정도 지워진다'],
+    sample:GAS + 'h3-counsel-booking/index.html', code:[GAS + 'h3-counsel-booking/Code.gs', GAS + 'h3-counsel-booking/index.html'],
+    prompt:`진로상담 예약 웹앱을 구글 앱스스크립트로 만들어줘. Code.gs와 index.html(HTML 파일 이름 index) 두 파일로.
+[시트] "슬롯" 시트: A 날짜(2026-11-04) | B 시간(15:40) | C 상태(빈자리/예약됨/닫힘) | D 예약자이메일 | E 주제 | F 일정ID(자동). 나는 A·B만 적고 C를 "빈자리"로 둘게.
+[학생 화면]
+- 월~금 주간 캘린더 그리드: 왼쪽에 시간, 위에 요일·날짜(오늘은 동그라미). 칸은 "가능/마감/내 예약/지남" 4가지 모양(마감은 빗금, 내 예약은 진한 청록)
+- 이전 주/다음 주 버튼
+- 가능 칸을 누르면 아래에서 올라오는 창: 날짜·시간, 주제 칩 5개(진로 고민, 고등학교 진학, 진로검사 결과, 학과·직업 정보, 기타) 중 하나, 선생님께 전할 말(200자, 글자수 표시)
+- 오른쪽(휴대폰은 아래)에 "내 예약" 티켓 카드: 큰 날짜 숫자 + 시간 + 주제 + 예약 취소(두 번 눌러야 취소)
+- 다른 학생의 이메일·주제는 절대 화면으로 보내지 말고 상태만 보내줘
+[서버]
+- 학생 이메일은 Session.getActiveUser()로. 한 사람당 예약 1개
+- 예약은 LockService 안에서 그 칸이 아직 빈자리인지 다시 확인하고, 아니면 "방금 다른 학생이 예약했어요" 오류
+- 예약되면 나에게 메일을 보내고, 내 기본 캘린더에 30분 일정을 만들어 일정ID를 F열에 저장. 취소하면 일정도 삭제
+- 시트에 쓰는 학생 글자가 =,+,-,@로 시작하면 앞에 ' 붙이기. 주제·메모 길이는 서버에서도 검사
+[디자인] Pretendard, 밝은 청록 계열, 카드형, 버튼·칸 최소 44px, 360px 휴대폰에서 가로 스크롤 없게, 칸에 마우스를 올리면 살짝 떠오르는 효과, 로딩·오류·빈 주 안내 문구는 한국어로
+[미리보기] google.script.run이 없으면 예시 데이터로 전체 흐름이 돌아가는 미리보기 모드와 위쪽 안내 띠를 넣어줘
+[배포] 실행: 나 / 액세스: 학교 도메인 내 모든 사용자. 설치·배포 순서를 Code.gs 맨 위 주석에 적어줘`,
+    next:['예약이 확정되면 학생에게도 확인 메일을 보내줘','상담 하루 전 아침 8시에 학생에게 알림 메일이 가는 시간 트리거를 만들어줘','교사용 화면을 따로 만들어 이번 주 예약 목록과 주제를 보고 칸을 "닫힘"으로 바꿀 수 있게 해줘'] },
+
+  { id:'m1', l:2, t:'html', name:'직업 가치관 카드 소팅', std:['9진로01-02','9진로03-01'], who:'학생 수업',
+    what:'초록 펠트 테이블 위에서 가치 카드 16장을 "꼭 필요 / 있으면 좋음 / 상관없음"으로 끌어다 나눕니다. "꼭 필요"에서 1~5위를 정하면 성찰 질문이 들어간 TOP 5 포스터가 PNG로 나옵니다.',
+    use:'직업 가치관 단원. 개인 활동 15분 뒤 포스터를 모둠에서 돌려 보며 "1위가 같은 사람끼리 이야기 나누기"로 이어 갑니다.',
+    done:['마우스와 터치 모두 카드를 끌어 놓을 수 있고, 끌기가 어려우면 눌러서 옮길 수도 있다','"꼭 필요"가 5장보다 적으면 다음 버튼이 꺼지고 이유를 한 줄로 알려 준다','포스터에 순위 5개, 가치 정의, 성찰 질문 1개가 들어간다'],
+    sample:'samples/m1-value-sort.html',
+    prompt:`중학생용 '직업 가치관 카드 소팅' 활동을 HTML 파일 하나로 만들어 줘. 외부 라이브러리 없이, 글꼴은 Pretendard와 제목용 Jua만 써.
+카드: 직업 가치 16장을 직접 만들어 줘(이모지, 두세 글자 이름, 중학생 말투의 한 줄 정의. 표준화 검사 문항을 베끼지 말 것).
+1단계 나누기: 화면 위에 카드 더미를 두고 맨 위 카드 한 장만 크게 보여 줘. 아래에 '꼭 필요 / 있으면 좋음 / 상관없음' 칸 3개(색 테두리, 칸 이름 버튼에 개수 표시). 카드는 Pointer Events로 끌어서 칸에 놓아(HTML5 드래그앤드롭 금지, 마우스·터치 둘 다). 끌기 대신 카드를 누르고 칸 이름 버튼을 눌러도 옮겨지게. 이미 놓은 카드도 다른 칸으로 옮길 수 있게. 카드를 다 나누고 '꼭 필요'가 5장 이상일 때만 '순위 정하기' 버튼이 켜지고, 아니면 "'꼭 필요'에 5장 이상 있어야 해요 (지금 3장)"처럼 이유를 보여 줘.
+2단계 순위: '꼭 필요' 카드를 누른 순서대로 1~5위 배지가 붙고, 다시 누르면 빠져. 위에 1~5위 빈 슬롯. 5개가 차야 다음 단계로.
+3단계 포스터: 캔버스(1080×1350)에 펠트 배경, '나의 직업 가치 TOP 5', 살짝 기울어진 카드 5장, 성찰 질문 하나("1위 '○○'을 지킬 수 있는 일하는 장면을 떠올려 볼까요?" 조사 을/를 자동), 칸별 장수와 날짜. 이름 칸(선택)을 넣고, 이미지로 보여 주면서 PNG 저장 버튼과 "길게 눌러 저장" 안내를 함께.
+디자인: 초록 펠트 카드 테이블(노이즈 질감, 가운데가 밝은 조명), 크림색 종이 카드는 조금씩 기울어 있다가 마우스를 올리거나 고르면 똑바로 들어 올려지고 그림자가 깊어지게. 끌 때는 카드 복사본이 손가락을 따라오고, 놓으면 칸에 '툭' 내려앉는 애니메이션. 360px에서 가로 스크롤 없이, 44px 이상, :focus-visible, prefers-reduced-motion 대응.`,
+    next:['"있으면 좋음"에서 하나를 골라 "왜 1위가 아닌지" 한 줄 쓰는 칸을 포스터에 추가해 줘','카드 16장을 우리 반이 정한 가치로 바꿀 수 있게 카드 편집 화면을 만들어 줘','1단계에 마지막 이동을 취소하는 "되돌리기" 버튼을 넣어 줘'] },
+
+  { id:'m2', l:2, t:'html', name:'진로 방탈출', std:['9진로02-01'], who:'학생 수업',
+    what:'2035년 가상 도시 "새솔시" 기록실에서 기술·인구·환경·가치관 자물쇠 4개를 풉니다. 구인 게시판 비교, 인구 그래프와 상가 소식, 발전소 그래프, 직업인 인터뷰가 단서이고 정답은 단서 안에서만 찾을 수 있습니다. 문이 열리면 기록 시간과 "가장 놀란 변화" 성찰 칸이 나옵니다.',
+    use:'직업 세계 변화 단원 도입(모둠별 태블릿, 15분). 탈출 뒤 성찰 글을 패들렛에 모아 "어떤 변화가 내 진로에 가장 큰 영향을 줄까" 토의로 이어 갑니다. 문제는 파일 위쪽 PUZZLES만 고치면 바뀝니다.',
+    done:['정답·풀이가 어떤 화면에도 나오지 않는다(교사 화면은 TV 공유)','오답 3번이면 10초 잠기고, 힌트를 보면 시간 패널티가 붙는다','공백·대소문자가 달라도 정답으로 인정된다'],
+    sample:'samples/m2-career-escape.html',
+    prompt:`중학교 진로 수업용 방탈출 게임 '2035 새솔시의 문'을 HTML 파일 하나로 만들어줘. 외부 라이브러리 없이, 폰트는 Pretendard와 제목용 Black Han Sans만 써.
+- 이야기: 학생들이 2035년 가상 도시 새솔시의 기록실에 갇혔고, 출구 문에 기술·인구·환경·가치관 자물쇠 4개가 걸려 있어
+- 화면 분위기: 아주 어두운 방. 가운데에 나무 문이 있고 황동 자물쇠 4개가 걸려 있어. 마우스를 따라 손전등 빛(radial-gradient)이 움직여. 자물쇠를 누르면 클로즈업 화면으로 넘어가고, 왼쪽에 단서, 오른쪽에 큰 자물쇠 그림(SVG)과 입력칸이 있어
+- 숫자 자물쇠는 위·아래 버튼으로 돌리는 4자리 다이얼, 단어 자물쇠는 큰 입력칸
+- 단서는 퍼즐 안에서만 풀리게(외운 지식·실제 통계 필요 없음). 기술=1995년과 2035년 구인 게시판 비교, 인구=가상 연령대 막대그래프와 상가 개업·폐업 소식, 환경=가상 발전소 전력 비중 꺾은선그래프, 가치관=직업인 인터뷰 3개에서 공통 단어 찾기. 그래프는 SVG로 직접 그리고 '숫자로 보기' 표도 함께
+- 문제·정답·힌트는 파일 맨 위 PUZZLES 상수 하나에 JSON으로 모아서 교사가 고칠 수 있게
+- 전체 제한 시간 15분(넘겨도 계속 가능, 초과 시간 표시). 자물쇠마다 힌트 2개(누르면 +30초, +60초), 오답 3번마다 10초 잠금
+- 정답은 공백·대소문자를 무시하고 비교하고, 정답이나 풀이는 어떤 화면에도 보이지 않게(교사 화면을 TV로 함께 봐)
+- 맞히면 자물쇠 고리가 튀어 오르고, 4개를 다 풀면 문짝 두 개가 3D로 열려. 그다음 기록 시간, 힌트·오답 수, "가장 놀란 변화" 고르기와 성찰 글쓰기, 기록 복사 버튼
+- 모든 인물·도시·수치는 가상이라고 화면에 표시. 휴대폰 360px에서 깨지지 않게, 버튼은 44px 이상, 동작 줄이기 설정이면 애니메이션 끄기`,
+    next:['우리 지역 산업(예: 반도체·관광)으로 다섯 번째 자물쇠를 추가해줘','모둠 기록을 모아 순위를 보여 주는 교사용 "기록판" 화면을 만들어줘(저장은 이 기기에만)','정답을 소스 보기로 찾을 수 없게 SHA-256 해시로 바꿔줘'] },
+
+  { id:'m3', l:2, t:'gas', name:'진로검사 학급 대시보드', std:['9진로01-02'], who:'교사 업무',
+    what:'학생이 폼에 커리어넷 검사 결과값(흥미 1·2순위, 가치관 상위 3개)만 적으면, 교사 전용 대시보드에서 반별 흥미 분포 막대, 학급 흥미 육각형, 가치관 순위, 학생 목록을 봅니다.',
+    use:'검사 뒤 학급 특성에 맞춰 수업 활동 조정. 담임 협의 때 "이름 가리기"를 켜고 화면 공유. 상담 전 학생 결과 빠르게 찾기.',
+    done:['배포 접근이 "나만"으로 되어 있다','반을 바꾸면 막대와 육각형이 부드럽게 바뀐다','응답이 0건이면 할 일을 단계별로 안내한다(검사 문항 없이 결과값만)'],
+    sample:GAS + 'm3-test-dashboard/index.html', code:[GAS + 'm3-test-dashboard/Code.gs', GAS + 'm3-test-dashboard/index.html'],
+    prompt:`진로검사 결과 학급 대시보드를 구글 앱스스크립트 웹앱으로 만들어줘. Code.gs와 index.html(HTML 파일 이름 index).
+[시트] 구글 폼 응답 시트 "설문지 응답 시트1". 열 제목: 타임스탬프 | 학년 | 반 | 번호 | 이름 | 흥미 1순위 | 흥미 2순위 | 가치관 상위 3개(체크박스라 "자율성, 보수, 창의성"처럼 쉼표로 들어옴). 열 순서가 바뀌어도 제목으로 찾고, 제목이 없으면 어떤 열이 없는지 알려줘. 같은 학년·반·번호가 여러 번 내면 마지막 응답만.
+흥미 유형은 현실형·탐구형·예술형·사회형·진취형·관습형, 가치관 이름은 Code.gs 맨 위 상수로 둬서 내가 고칠 수 있게. 검사 문항은 넣지 말고 결과값만 다뤄.
+[화면]
+- 위쪽 남색 띠: 제목, 반 고르기 알약 버튼(전체/2학년 1반…), "이름 가리기"(김○○), 새로고침
+- 띠에 살짝 걸친 지표 카드 3개: 응답한 학생 수, 1순위로 가장 많이 고른 흥미, 가장 많이 고른 가치관(숫자 크게)
+- 흥미 유형 분포: 유형별 가로 막대(1순위 진하게 + 2순위 연하게 이어서), 막대를 누르면 아래 학생 목록이 그 유형만 보이게
+- 우리 반 흥미 지형: SVG 육각형 레이더(1순위 2점 + 2순위 1점)
+- 반을 바꾸면 막대와 육각형이 0.4초 정도 부드럽게 바뀌게(외부 라이브러리 없이 requestAnimationFrame)
+- 가치관 순위: 1~3위 강조 + 막대
+- 학생 목록: 번호, 이름, 흥미 1·2순위(색 점), 가치관 3개 칩, 검색
+- 응답이 0건이면 "폼 링크 보내기 → 결과값만 옮겨 적기 → 새로고침" 안내
+[디자인] Pretendard, 흰 카드, 보라색 포인트, 유형마다 차분한 색 6개, 360px 휴대폰에서도 깨지지 않게, 버튼 44px
+[미리보기] google.script.run이 없으면 가명 예시 데이터로 돌아가는 미리보기 모드와 위쪽 안내 띠
+[배포] 실행: 나 / 액세스: 나만(학생 이름이 보이므로). 설치 순서를 Code.gs 맨 위 주석에`,
+    next:['흥미 1·2순위가 같은 학생끼리 모둠 편성 추천 표를 만들어줘','학기 초·학기 말 두 번 응답을 비교하는 "변화" 탭을 추가해줘','지금 화면을 이름 없이 한 장으로 볼 수 있는 인쇄용 보기 버튼'] },
+
+  { id:'s1', l:3, t:'gas', name:'진로체험 부스 자동 배정', std:['진로체험 운영'], who:'교사 + 학생',
+    what:'학생이 폼으로 1~3지망과 확인코드를 내면, 교사가 콘솔에서 선착순 또는 시드 무작위로 정원 안에서 배정합니다. 미리 본 뒤 확정하면 배정표·부스별 명단·배정 기록 시트가 생기고, 학생은 같은 주소에서 학번+확인코드로 자기 결과만 봅니다.',
+    use:'진로체험의 날, 동아리·방과후 배정. 시드를 기록해 두면 "왜 내가 떨어졌냐"는 질문에 같은 결과를 다시 보여 줄 수 있습니다.',
+    done:['어느 부스도 정원을 넘지 않고, 미배정 학생이 따로 보인다','같은 시드로 다시 돌리면 같은 결과가 나온다(시드·실행 시각 기록)','학번과 확인코드가 둘 다 맞아야 조회되고, 교사 콘솔과 학생 화면이 구분된다'],
+    sample:GAS + 's1-booth-assign/index.html', code:[GAS + 's1-booth-assign/Code.gs', GAS + 's1-booth-assign/index.html'],
+    prompt:`진로 체험 부스 배정 웹앱을 구글 앱스스크립트로 만들어줘. Code.gs와 index.html(HTML 파일 이름 index).
+[시트]
+- 폼 응답 "설문지 응답 시트1": 타임스탬프 | 학번 | 이름 | 1지망 | 2지망 | 3지망 | 확인코드(학생이 정한 숫자 4자리). 같은 학번은 마지막 응답만
+- "부스": A 이름 | B 정원
+- 자동 생성: "배정표"(학번, 이름, 배정 부스, 지망 순위, 비고), "부스별 명단"(부스마다 제목 줄+명단, 인쇄용), "배정 기록"(실행 시각, 실행한 사람, 방식, 시드, 신청, 배정, 미배정)
+[배정 로직] 시트·구글 기능을 쓰지 않는 순수 함수 assign(신청자, 부스, {mode, seed})로 따로 만들어줘.
+- 선착순: 제출 시각 순 / 무작위: 시드 문자열로 고정되는 난수로 섞기(같은 시드 = 같은 결과, 시트 줄 순서와 무관)
+- 한 명씩 남은 자리가 있는 가장 높은 지망에 배정, 정원 절대 초과 금지, 부스 시트에 없는 지망은 건너뛰기
+- assert로 확인하는 자체검사 함수 testAssign(정원 초과 없음, 지망 밖 배정 없음, 같은 시드 같은 결과, 선착순 1등은 1지망)
+[화면] 같은 주소를 교사(배포한 계정)가 열면 콘솔, 학생이 열면 조회 화면
+- 교사 콘솔: 위에 4단계 진행 표시(신청 확인→배정 방식→결과·확정→학생 공개)
+  1 신청 수/부스 수/총 정원 + 정원보다 신청이 많으면 경고 + 부스 시트에 없는 지망 목록
+  2 "시드 무작위 / 선착순" 카드 선택, 시드 입력 + 새 시드 버튼, "배정 미리보기"(시트에 안 씀)
+  3 1·2·3지망·미배정 비율 막대, 부스별 좌석을 작은 점으로 그려 배정된 만큼 차오르게, 결과 표(전체/미배정/부스별 거르기), "같은 시드로 다시 돌려 확인", "확정하고 시트에 쓰기"(서버에서 다시 계산해서 씀)
+  4 학생 조회 열기 스위치 + 학생 안내 문구(웹앱 주소 포함) 복사 버튼
+- 학생 조회: 학번 + 확인코드 → 내 부스와 몇 지망인지 크게. 틀리면 어느 쪽이 틀렸는지 말하지 말고, 5번 틀리면 10분 잠금(CacheService). 공개 전이면 "아직 공개 전" 안내
+- 교사 기능은 서버에서 교사인지 매번 확인. 시트에 쓰는 학생 글자가 =,+,-,@로 시작하면 ' 붙이기
+[디자인] Pretendard, 남색 콘솔 + 청록 버튼, 카드형, 360px 휴대폰 OK, 버튼 44px, 상태 안내는 한국어
+[미리보기] google.script.run이 없으면 예시 신청 데이터로 돌아가고, 교사 콘솔/학생 조회를 탭으로 바꿔 볼 수 있게
+[배포] 실행: 나 / 액세스: 학교 도메인 내 모든 사용자. 설치·배포·자체검사 실행 방법을 Code.gs 맨 위 주석에`,
+    next:['미배정 학생만 모아 남은 자리로 2차 배정하는 버튼을 추가해줘','부스별 명단을 부스마다 구글 문서 한 장(출석 체크 칸 포함)으로 만들어줘','같은 반 친구끼리 한 부스에 몰리지 않게 반별 최대 인원 옵션을 넣어줘'] },
+
+  { id:'s2', l:3, t:'html', name:'진로 상담 대시보드', std:['9진로01-02','9진로03-01','9진로03-02'], who:'교사 + 학생',
+    what:'교사와 학생이 한 화면을 보며 흥미 6유형 점수, 적성 강점, 가치관 상위 항목을 옮겨 적으면 육각형 그래프와 흥미 코드, 세 렌즈 겹침 다이어그램 위에 확인해 볼 직업 후보가 나타납니다. 상담 질문 카드, 우선·대안 경로 메모, 요약 복사까지 이어집니다.',
+    use:'검사 뒤 1:1 진로 상담(노트북이나 교실 TV로 함께 보기)과 진로의사결정 수업 정리. 요약을 상담 기록이나 학습지에 붙여 넣습니다.',
+    done:['기본은 아무것도 저장하지 않고, "이 기기에 저장"을 눌렀을 때만 저장·"모두 지우기"로 삭제된다','직업 후보에 "확인할 후보 예시, 추천 아님"이 보인다','"데모 학생 채우기" 한 번으로 모든 칸과 그림이 채워진다'],
+    sample:'samples/s2-counsel-board.html',
+    prompt:`진로 상담 때 교사와 학생이 함께 보는 '진로 상담 대시보드'를 HTML 파일 하나로 만들어줘. 외부 라이브러리 없이 차트는 SVG로 직접 그리고, 폰트는 Pretendard만 써.
+- 디자인: 밝고 차분한 전문 도구 느낌. 흰 카드와 연한 회녹색 배경. 흥미=파랑, 적성=초록, 가치관=황토색으로 세 렌즈 색을 정해 화면 전체에서 같은 색으로 써. PC에서는 왼쪽 입력, 오른쪽 결과 2단, 휴대폰은 1단
+- 입력: 이름·학년반, 흥미 6유형(현실·탐구·예술·사회·진취·관습) 점수 0~100(옆에 미니 막대), 적성 영역 칩 중 3개, 가치관 칩 중 3개를 누른 순서대로(칩에 1·2·3 순위 표시)
+- 적성·가치관 영역 이름은 상수로 따로 빼고 '예시'라고 표시해줘(학교 결과지에 맞춰 바꿀 거야)
+- 결과: 흥미 육각형 그래프와 상위 2유형 코드, 세 렌즈 요약
+- 시그니처: 흥미·적성·가치관 원 3개가 겹치는 다이어그램. 직업 매핑표(상수, 직업 25개 정도, 흥미 주 유형·관련 적성·관련 가치)와 비교해 세 렌즈가 다 겹치면 가운데, 두 개면 그 겹침 영역에 직업 이름을 놓고, 옆에 렌즈 배지 목록. "확인할 후보 예시이며, 추천이 아닙니다" 문구 필수
+- 상담 질문 카드: 버튼을 누르면 카드가 뒤집히며 질문이 나오고, 질문 속 {흥미}{적성}{가치}{후보}는 프로필로 채워. '메모에 담기' 버튼
+- 우선 경로 / 대안 경로: 관심 직업, 고등학교·학과 방향, 이번 학기에 해 볼 일. 그리고 상담 메모
+- 요약 텍스트와 복사 버튼
+- 개인정보: 기본은 저장 안 함. '이 기기에 저장'을 눌렀을 때만 localStorage, 맨 위에 개인정보 경고 띠와 '이 기기에서 모두 지우기'(확인창). 폰트 말고는 네트워크 요청 금지
+- '데모 학생 채우기' 버튼(가명), 점수가 범위를 벗어나면 한국어 한 줄 안내, 연봉·전망 수치는 넣지 마`,
+    next:['매핑표에 우리 학교 진로 동아리와 연계된 직업 10개를 더 넣고, 직업을 누르면 커리어넷 직업정보 검색으로 연결해줘','1학기와 2학기 흥미 점수를 겹쳐 그려 변화를 보여줘','인쇄하면 A4 한 장 상담 기록지로 나오게 인쇄용 스타일을 다듬어줘'] },
+
+  { id:'s3', l:3, t:'gas', name:'생기부 진로활동 초안 도우미', std:['학생부 기재 업무'], who:'교사 업무',
+    what:'1년 동안 시트에 쌓은 관찰 기록을 학생별로 모아 규칙으로 문장 초안을 조립합니다. 원 기록과 초안을 번호로 연결해 나란히 보며 고치고, 글자수·바이트·금지 표현(예시)을 실시간으로 확인합니다. AI 다듬기는 선택이고 기본은 꺼져 있습니다.',
+    use:'학기 말 진로활동 특기사항 초안 작업 시간 줄이기. 기록에 근거한 문장만 쓰는 습관 들이기.',
+    done:['초안 문장마다 어느 기록에서 왔는지 번호로 보이고, 원 기록과 나란히 비교된다','글자수·바이트가 입력할 때마다 바뀌고, 한도는 설정값이며 "기재요령 확인" 안내가 항상 보인다','AI로 보내는 글에서 이름·학번·반이 코드로 지워지고, "기록에 없는 사실 추가 금지"가 프롬프트에 들어 있다'],
+    sample:GAS + 's3-record-helper/index.html', code:[GAS + 's3-record-helper/Code.gs', GAS + 's3-record-helper/index.html'],
+    prompt:`생활기록부 진로활동 특기사항 "초안" 도우미를 구글 앱스스크립트 웹앱으로 만들어줘. Code.gs와 index.html(HTML 파일 이름 index).
+[시트] "관찰기록": A 날짜 | B 학번 | C 이름 | D 활동 | E 관찰 내용 (내가 1년 동안 한 줄씩 쌓음). "초안" 시트는 자동: 학번 | 이름 | 초안 | 글자수 | 바이트 | 저장 시각 (학번당 한 줄 덮어쓰기)
+[화면] 문서 편집기처럼 3단(휴대폰은 위아래):
+- 왼쪽 학생 목록(검색, 기록 수, 저장 여부 배지)
+- 가운데 그 학생의 관찰 기록 원문 카드(번호 ①②③, 넣을 것만 체크)
+- 오른쪽 초안: "기록으로 초안 만들기"를 누르면 체크한 기록마다 "활동 활동에서 관찰 내용." 규칙으로 한 문장씩 블록을 만들어. 블록은 바로 고칠 수 있고 위/아래/빼기 버튼, 블록 왼쪽에 원 기록 번호
+- 블록에 마우스나 포커스를 두면 해당 원 기록 카드가 함께 강조되게(서로 연결)
+- 블록마다 검사: 금지 표현 예시 목록(상수, "예시 목록"이라고 표시: 토익, 토플, 교외, 논문, 특허 등)이 있으면 빨간 표시, 문장 끝이 "~함/~임/~음"이 아니면 노란 안내
+- 화면 아래 고정 바: 글자수/바이트 게이지(90% 눈금, 한도 넘으면 빨강 + 몇 바이트 줄여야 하는지). 한도와 바이트 계산 규칙은 Code.gs 맨 위 설정값으로 두고 "학교 기재요령 확인" 주석
+- 같은 바에 항상: "초안일 뿐이에요. 기재요령 확인·교사 최종 검토 후 NEIS에 직접 입력. 생성형 AI는 교육청·학교 지침 확인"
+- 복사(clipboard 실패하면 textarea 방식), 시트에 저장
+[AI 다듬기 - 선택, 기본 꺼짐] 스크립트 속성 AI_ENABLED=true, GEMINI_API_KEY, GEMINI_MODEL이 있을 때만. 보내기 전에 "보낼 내용" 미리보기와 "지침 확인" 체크. 이름(성 뺀 이름도)·학번·학년·반·번호는 서버에서 코드로 지운 초안만 보내고, 프롬프트에 "초안에 없는 사실·활동·평가를 추가하지 마라, 분량을 늘리지 마라" 넣기. 결과는 지금 초안과 나란히 비교 후 적용/버리기
+[자체검사] 바이트 계산·개인정보 지우기를 assert로 확인하는 selfTest 함수
+[미리보기] google.script.run이 없으면 가명 예시 기록과 가짜 AI 응답으로 돌아가는 미리보기 모드(외부 호출 없음)
+[디자인] Pretendard, 따뜻한 종이색 배경, 청록 버튼, 카드형, 버튼 44px, 360px 휴대폰 OK
+[배포] 실행: 나 / 액세스: 나만. 시트에 쓰는 글자가 =,+,-,@로 시작하면 ' 붙이기. 설치 순서와 스크립트 속성 넣는 법을 Code.gs 맨 위 주석에`,
+    next:['관찰 기록을 구글 폼으로도 쌓을 수 있게 폼 응답을 "관찰기록" 형식으로 옮기는 메뉴를 만들어줘','학급 전체 학생의 초안 저장 여부와 바이트를 한 표로 보는 "진행 현황" 탭을 추가해줘','같은 표현이 여러 학생 초안에 반복되면 알려 주는 "비슷한 문장 찾기"'] },
 ];
 const IDEAS = [
-  ['9진로02-01','사라지는 직업·새로 생기는 직업 카드를 시대별 타임라인에 끌어다 놓고, 변화 원인(기술·인구·환경)을 고르는 활동','HTML · 중'],
-  ['9진로02-02','직업인 한 명의 실제 진로 경로를 갈림길 이야기로 따라가며 "다른 선택을 했다면?"을 써 보는 분기형 스토리','HTML · 중'],
-  ['9진로02-03','커리어넷 오픈API로 학과 정보를 검색해 관심 학과 스크랩북 만들기 (키는 앱스스크립트에 보관)','앱스스크립트 · 상'],
-  ['9진로02-06','모둠별 창업 아이디어 캔버스를 폼으로 제출 → 시트에 모아 다른 모둠이 별점·댓글 투자','앱스스크립트 · 중'],
-  ['9진로01-03','"함께 일하고 싶은 동료의 특성" 실시간 단어 투표 → 많이 나온 단어를 크게 보여 주는 화면','앱스스크립트 · 중'],
+  ['9진로02-05','고교 유형 나침반: "고등학교에서 하고 싶은 것" 질문에 답하면 어울릴 수 있는 고교 유형과 꼭 확인할 점, 고입정보포털 링크','HTML · 중'],
+  ['9진로01-04','나의 하루 균형표: 평일 24시간을 "지금"과 "바라는 하루" 원그래프로 비교하고 여가의 의미 쓰기','HTML · 하'],
   ['9진로03-03','진로 목표와 연결한 주간 학습 계획표, 요일별 체크 시 달성률 그래프','HTML · 하'],
-  ['심리검사','진로성숙도·진로개발역량 검사 학기 초/말 점수 비교 대시보드 (학급 평균과 개인 변화)','앱스스크립트 · 상'],
-  ['심리검사','직업가치관 카드 소팅: 가치 카드 12장을 "꼭 필요 / 있으면 좋음 / 상관없음"으로 나눠 상위 가치 정리','HTML · 하'],
+  ['9진로02-06','모둠별 창업 아이디어를 폼으로 제출 → 다른 모둠이 가상 투자금을 나눠 주는 투자 게임','앱스스크립트 · 중'],
+  ['9진로02-02','직업인 한 명의 진로 경로를 갈림길 이야기로 따라가며 "다른 선택을 했다면?"을 써 보는 분기형 스토리','HTML · 중'],
+  ['9진로02-03','커리어넷 오픈API로 학과 정보를 검색해 관심 학과 스크랩북 만들기(키는 스크립트 속성에)','앱스스크립트 · 상'],
+  ['9진로01-03','"함께 일하고 싶은 동료의 특성" 실시간 단어 투표 → 많이 나온 단어를 크게 보여 주는 화면','앱스스크립트 · 중'],
+  ['심리검사','진로성숙도·진로개발역량 검사 학기 초/말 점수 비교 대시보드(학급 평균과 개인 변화)','앱스스크립트 · 상'],
 ];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const stdChips = a => a.map(s => `<span class="std">${s.startsWith('9') ? '[' + s + ']' : s}</span>`).join(' ');
+const shot = id => `samples/shots/${id}.jpg`;
 
+$('mosaic').innerHTML = TASKS.map(x =>
+  `<a href="#${x.id}"><img src="${shot(x.id)}" alt="${esc(x.name)} 완성 화면" loading="eager"><span>${LV[x.l]} · ${esc(x.name)}</span></a>`).join('');
 $('mapBody').innerHTML = TASKS.map(x => `<tr><td><a href="#${x.id}">${esc(x.name)}</a></td>
   <td><span class="chip l${x.l}">${LV[x.l]}</span></td><td><span class="chip ${x.t}">${TR[x.t]}</span></td>
-  <td>${stdChips(x.std)}</td><td>${x.who}</td></tr>`).join('');
-$('ideaBody').innerHTML = IDEAS.map(([s, i, t]) => `<tr><td>${stdChips([s])}</td><td>${esc(i)}</td><td class="num">${t}</td></tr>`).join('');
+  <td>${stdChips(x.std)}</td><td class="nowrap">${x.who}</td></tr>`).join('');
+$('ideaBody').innerHTML = IDEAS.map(([s, i, t]) => `<tr><td>${stdChips([s])}</td><td>${esc(i)}</td><td class="nowrap">${t}</td></tr>`).join('');
 
-const BAND = { 1:'처음 만져 보는 선생님. 프롬프트 한 번으로 결과가 나오고, 고치는 재미를 느끼는 단계.',
-  2:'입력한 데이터를 계산해 그래프와 피드백으로 바꾸는 단계. 실제 수업·업무에 바로 씁니다.',
-  3:'여러 단계와 저장, 여러 사용자를 다루는 단계. 모둠으로 나눠 맡거나 연수 후 과제로 줍니다.' };
+const BAND = { 1:'처음 만져 보는 선생님. 프롬프트 한 번으로 그럴듯한 결과가 나오고, 고치는 재미를 느끼는 단계.',
+  2:'여러 단계 흐름과 그래프, 시트 데이터를 다루는 단계. 실제 수업·업무에 바로 씁니다.',
+  3:'여러 사용자·자동 처리·개인정보 보호까지 챙기는 단계. 모둠으로 나눠 맡거나 연수 후 과제로 줍니다.' };
 $('bands').innerHTML = [1, 2, 3].map(l => `<section class="band" data-l="${l}">
-  <div class="band-head"><span class="lvmark">${LV[l]}</span><h2>${['', '25분 과제', '50분 과제', '90분 과제'][l]}</h2><p>${BAND[l]}</p></div>
+  <div class="band-head"><span class="lvmark">${LV[l]}</span><h2>${['', '30분 과제', '50분 과제', '90분 과제'][l]}</h2><p>${BAND[l]}</p></div>
   ${TASKS.filter(x => x.l === l).map(card).join('')}</section>`).join('');
 
 function card(x) {
-  const codes = [].concat(x.code || []);
+  const codes = x.code || [];
   return `<article class="task" id="${x.id}" data-t="${x.t}" data-l="${x.l}">
     <div class="task-info">
+      <a class="shot" href="${x.sample}" target="_blank" rel="noopener"><img src="${shot(x.id)}" alt="${esc(x.name)} 샘플 화면" loading="lazy"><span class="play">샘플 써 보기 ↗</span></a>
       <div class="meta"><span class="chip l${x.l}">${LV[x.l]}</span><span class="chip ${x.t}">${TR[x.t]}</span>${stdChips(x.std)}</div>
       <h3>${esc(x.name)}</h3>
       <p>${esc(x.what)}</p>
       <dl><div><dt>현장 활용</dt><dd>${esc(x.use)}</dd></div>
         <div><dt>완성 기준</dt><dd><ul>${x.done.map(d => `<li>${esc(d)}</li>`).join('')}</ul></dd></div></dl>
-      <div class="actions">${x.sample ? `<a class="btn solid" href="${x.sample}" target="_blank" rel="noopener">샘플 열어 보기</a>` : ''}</div>
     </div>
     <div class="prompts">
-      <div class="prompt"><div class="prompt-top"><span>시작 프롬프트</span><button class="copy" data-copy="${x.id}">복사</button></div>
-        <p id="p-${x.id}">${esc(x.prompt)}</p></div>
+      <div class="prompt"><div class="prompt-top"><span>시작 프롬프트 · AI 채팅에 그대로 붙여넣기</span><button class="copy" data-copy="p-${x.id}">복사</button></div>
+        <pre id="p-${x.id}">${esc(x.prompt)}</pre></div>
       <div><span class="eyebrow">이어서 다듬기</span><ul class="next">${x.next.map(n => `<li>${esc(n)}</li>`).join('')}</ul></div>
+      <p class="level-note">샘플은 시작 프롬프트에 다듬기를 몇 번 더한 수준입니다. 처음 결과가 샘플과 달라도 다듬기로 가까워집니다.</p>
     </div>
-    ${codes.length ? `<details class="src" data-files="${codes.join(',')}"><summary>샘플 코드 보기 (${codes.map(c => c.split('/').pop()).join(', ')})</summary></details>` : ''}
+    ${codes.length ? `<details class="src" data-files="${codes.join(',')}"><summary>샘플 코드 보기 (Code.gs, index.html)</summary></details>` : ''}
   </article>`;
 }
 
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-copy]');
   if (!b) return;
-  const p = $('p-' + b.dataset.copy);
+  const p = $(b.dataset.copy);
   try { await navigator.clipboard.writeText(p.textContent); b.textContent = '복사됨'; }
   catch { getSelection().selectAllChildren(p); b.textContent = 'Ctrl+C'; }
   setTimeout(() => b.textContent = '복사', 1600);
@@ -356,12 +447,12 @@ document.addEventListener('click', async e => {
 document.querySelectorAll('details.src').forEach(d => d.addEventListener('toggle', async () => {
   if (!d.open || d.dataset.loaded) return;
   d.dataset.loaded = 1;
-  for (const f of d.dataset.files.split(',')) {
+  for (const [i, f] of d.dataset.files.split(',').entries()) {
     let text;
     try { const r = await fetch(f); if (!r.ok) throw 0; text = await r.text(); }
-    catch { text = `불러오지 못했어요. 폴더의 ${f} 파일을 직접 여세요.`; }
-    d.insertAdjacentHTML('beforeend', `<p class="eyebrow" style="margin-top:12px">${esc(f.split('/').pop())}
-      <button class="copy" data-copy="c-${d.parentElement.id}-${d.children.length}">복사</button></p><pre id="p-c-${d.parentElement.id}-${d.children.length}">${esc(text)}</pre>`);
+    catch { text = `불러오지 못했어요. 저장소의 ${f} 파일을 직접 여세요.`; }
+    const id = `c-${d.parentElement.id}-${i}`;
+    d.insertAdjacentHTML('beforeend', `<p class="eyebrow">${esc(f.split('/').pop())} <button class="copy" data-copy="${id}">복사</button></p><pre id="${id}">${esc(text)}</pre>`);
   }
 }));
 

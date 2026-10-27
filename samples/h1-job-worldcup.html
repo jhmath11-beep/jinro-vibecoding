@@ -1,0 +1,428 @@
+<!doctype html>
+<!--
+  과제: 직업 월드컵 (하)
+  성취기준: [9진로01-01] 자신의 흥미·적성을 탐색하고 진로와 연결한다
+  이 샘플은 시작 프롬프트 + 다듬기 3회 수준 (1. VS 연출·애니메이션 2. 결과 육각형 그래프 3. 모바일 위아래 배치·TV 글씨 크기)
+  직업 설명과 유형 태그는 연수용 자작 예시이며, 표준화 검사 결과가 아닙니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직업 월드컵</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap">
+<style>
+:root {
+  --primary: #ffcf3f;          /* 스포트라이트 골드 */
+  --primary-strong: #ffb800;
+  --primary-soft: rgba(255, 207, 63, .22);
+  --accent: #ff4d8d;           /* VS 핑크 */
+
+  --bg: #0b0c1e;
+  --surface: #17193a;
+  --border: rgba(255, 255, 255, .12);
+  --text: #f6f4ff;
+  --text-muted: #b9b6d9;
+  --text-subtle: #8b88b3;
+
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+
+  /* 흥미유형 색 */
+  --R: #ff8a4c; --I: #4cc3ff; --A: #c77dff; --S: #4ce0a0; --E: #ff5c7a; --C: #ffd34c;
+
+  --fs-xs: .75rem; --fs-sm: .875rem; --fs-base: 1rem; --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem; --fs-2xl: 2rem; --fs-3xl: 3rem;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-6: 24px; --sp-8: 32px; --sp-12: 48px; --sp-16: 64px;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-full: 999px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, .3);
+  --shadow-md: 0 12px 40px rgba(0, 0, 0, .45);
+  --container: 1100px;
+  --display: "Black Han Sans", Pretendard, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  color: var(--text); background: var(--bg);
+  font-size: var(--fs-lg); line-height: 1.6; -webkit-font-smoothing: antialiased;
+  min-height: 100vh; overflow-x: hidden;
+}
+/* 스포트라이트 두 개가 무대를 비춘다 */
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 40% 70% at 25% -10%, rgba(255, 220, 120, .22), transparent 70%),
+    radial-gradient(ellipse 40% 70% at 75% -10%, rgba(255, 120, 190, .18), transparent 70%),
+    radial-gradient(ellipse 80% 40% at 50% 110%, rgba(90, 80, 255, .25), transparent 70%);
+  animation: sway 9s ease-in-out infinite alternate;
+}
+@keyframes sway { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
+
+.wrap { position: relative; z-index: 1; max-width: var(--container); margin: 0 auto; padding: var(--sp-6) var(--sp-4) var(--sp-12); }
+h1, h2 { line-height: 1.25; margin: 0; }
+.display { font-family: var(--display); font-weight: 400; letter-spacing: .02em; }
+.muted { color: var(--text-muted); }
+.screen[hidden] { display: none; }
+
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+.btn {
+  min-height: 52px; padding: 0 var(--sp-8); border: 0; border-radius: var(--r-full);
+  background: var(--primary); color: #1b1400; font-size: var(--fs-lg); font-weight: 800;
+  cursor: pointer; transition: transform .15s, background .15s, box-shadow .15s;
+  box-shadow: 0 0 0 0 var(--primary-soft);
+}
+.btn:hover { background: var(--primary-strong); box-shadow: 0 0 0 8px var(--primary-soft); }
+.btn:active { transform: scale(.97); }
+.btn--ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 2px var(--border); }
+.btn--ghost:hover { background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 2px var(--text-subtle); }
+
+/* 시작 화면 */
+.intro { text-align: center; padding-top: var(--sp-12); display: grid; gap: var(--sp-6); justify-items: center; }
+.intro .kicker { color: var(--primary); font-weight: 700; letter-spacing: .12em; font-size: var(--fs-base); }
+.intro h1 { font-size: clamp(3rem, 12vw, 6.5rem); text-shadow: 0 0 40px rgba(255, 207, 63, .35); }
+.intro h1 em { font-style: normal; color: var(--primary); }
+.intro p { max-width: 34em; margin: 0; color: var(--text-muted); }
+.stack { position: relative; width: 220px; height: 120px; margin: var(--sp-4) 0; }
+.stack span {
+  position: absolute; inset: 0; border-radius: var(--r-md); background: var(--surface);
+  border: 1px solid var(--border); display: grid; place-items: center; font-size: 2.6rem;
+  box-shadow: var(--shadow-sm);
+}
+.stack span:nth-child(1) { transform: rotate(-12deg) translateX(-40px); }
+.stack span:nth-child(2) { transform: rotate(10deg) translateX(40px); }
+.stack span:nth-child(3) { transform: translateY(-6px); }
+.types-legend { display: flex; flex-wrap: wrap; gap: var(--sp-2); justify-content: center; }
+
+/* 태그 */
+.tag {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3); border-radius: var(--r-full);
+  font-size: var(--fs-base); font-weight: 700; color: #111;
+  background: var(--tc, #ccc);
+}
+.tag[data-t="R"] { --tc: var(--R); } .tag[data-t="I"] { --tc: var(--I); }
+.tag[data-t="A"] { --tc: var(--A); } .tag[data-t="S"] { --tc: var(--S); }
+.tag[data-t="E"] { --tc: var(--E); } .tag[data-t="C"] { --tc: var(--C); }
+
+/* 경기 화면 */
+.hud { display: grid; gap: var(--sp-3); justify-items: center; text-align: center; margin-bottom: var(--sp-8); }
+.round-name { font-size: clamp(2.2rem, 7vw, 3.6rem); color: var(--primary); }
+.round-count { font-size: var(--fs-xl); font-weight: 700; font-variant-numeric: tabular-nums; }
+.progress { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; max-width: 100%; }
+.progress i {
+  width: 14px; height: 10px; border-radius: var(--r-full); background: rgba(255, 255, 255, .14);
+  transition: background .3s, transform .3s;
+}
+.progress i.done { background: var(--primary); }
+.progress i.now { background: var(--accent); transform: scaleY(1.4); }
+.progress i.gap { margin-left: 8px; }
+@media (min-width: 768px) { .progress i { width: 22px; } }
+
+.arena {
+  display: grid; grid-template-columns: 1fr; gap: var(--sp-4); align-items: stretch;
+  position: relative;
+}
+.pick {
+  position: relative; text-align: center; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02)), var(--surface);
+  border: 2px solid var(--border); border-radius: var(--r-lg);
+  padding: var(--sp-8) var(--sp-6); min-height: 220px;
+  display: grid; gap: var(--sp-3); justify-items: center; align-content: center;
+  box-shadow: var(--shadow-md);
+  transition: transform .2s, border-color .2s, box-shadow .2s, opacity .3s;
+}
+.pick:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 0 0 6px var(--primary-soft), var(--shadow-md); }
+.pick .emoji { font-size: clamp(3.5rem, 10vw, 6rem); line-height: 1; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .5)); }
+.pick .name { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 800; line-height: 1.2; }
+.pick .desc { color: var(--text-muted); font-size: clamp(1.05rem, 2.2vw, 1.35rem); max-width: 22em; }
+.pick.in-left { animation: inL .35s cubic-bezier(.2, .8, .3, 1.2) both; }
+.pick.in-right { animation: inR .35s cubic-bezier(.2, .8, .3, 1.2) both; }
+@keyframes inL { from { opacity: 0; transform: translateX(-60px) rotate(-3deg); } }
+@keyframes inR { from { opacity: 0; transform: translateX(60px) rotate(3deg); } }
+.pick.win { transform: scale(1.05); border-color: var(--primary); box-shadow: 0 0 0 8px var(--primary-soft), 0 0 80px rgba(255, 207, 63, .45); }
+.pick.lose { opacity: .2; transform: scale(.92); filter: grayscale(1); }
+.arena.locked .pick { pointer-events: none; }
+
+.vs {
+  justify-self: center; align-self: center; z-index: 2;
+  width: 76px; height: 76px; margin: calc(-1 * var(--sp-8)) 0; border-radius: 50%;
+  display: grid; place-items: center; font-size: 2rem;
+  background: radial-gradient(circle at 35% 30%, #ff86b3, var(--accent) 60%, #b0175a);
+  box-shadow: 0 0 0 6px var(--bg), 0 0 40px rgba(255, 77, 141, .7);
+  animation: pop .4s cubic-bezier(.3, 1.6, .5, 1) both;
+}
+@keyframes pop { from { transform: scale(0) rotate(-30deg); } }
+.hint { text-align: center; margin-top: var(--sp-6); color: var(--text-subtle); font-size: var(--fs-base); }
+
+@media (min-width: 768px) {
+  .arena { grid-template-columns: 1fr auto 1fr; gap: 0; }
+  .vs { margin: 0 calc(-1 * var(--sp-6)); width: 104px; height: 104px; font-size: 2.8rem; }
+  .pick { min-height: 380px; }
+}
+
+/* 결과 화면 */
+.result { display: grid; gap: var(--sp-8); }
+.champ {
+  position: relative; text-align: center; padding: var(--sp-12) var(--sp-6) var(--sp-8);
+  border-radius: var(--r-lg); border: 2px solid var(--primary);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 207, 63, .28), transparent 70%), var(--surface);
+  box-shadow: 0 0 80px rgba(255, 207, 63, .25);
+  display: grid; gap: var(--sp-3); justify-items: center; overflow: hidden;
+  animation: rise .45s cubic-bezier(.2, .8, .3, 1.1) both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(30px) scale(.96); } }
+.champ .crown { font-size: 2.6rem; animation: bob 1.6s ease-in-out infinite alternate; }
+@keyframes bob { to { transform: translateY(-6px) rotate(6deg); } }
+.champ .label { color: var(--primary); font-size: var(--fs-xl); }
+.champ .emoji { font-size: clamp(4.5rem, 14vw, 7rem); line-height: 1.1; }
+.champ .name { font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 800; line-height: 1.15; }
+.champ .desc { color: var(--text-muted); font-size: var(--fs-xl); max-width: 24em; }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i {
+  position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px;
+  left: var(--x); background: var(--c); animation: fall var(--d) ease-in var(--w) both;
+}
+@keyframes fall { to { transform: translateY(520px) rotate(var(--r)); opacity: 0; } }
+
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-6); }
+.panel h2 { font-size: var(--fs-xl); margin-bottom: var(--sp-2); }
+.ref { display: inline-block; font-size: var(--fs-base); color: #1b1400; background: var(--primary); border-radius: var(--r-sm); padding: 0 var(--sp-2); font-weight: 700; margin-left: var(--sp-2); vertical-align: middle; }
+.grid2 { display: grid; gap: var(--sp-6); }
+.radar { width: 100%; max-width: 340px; margin: 0 auto; display: block; }
+.radar text { fill: var(--text); font-size: 15px; font-weight: 700; font-family: Pretendard, sans-serif; }
+.radar .area { fill: rgba(255, 207, 63, .35); stroke: var(--primary); stroke-width: 3; transform-origin: 170px 170px; animation: grow .6s cubic-bezier(.2, .8, .3, 1.2) both .2s; }
+@keyframes grow { from { transform: scale(0); } }
+.talk { font-size: var(--fs-xl); line-height: 1.5; margin: var(--sp-4) 0; }
+.talk b { color: var(--primary); }
+.final4 { display: grid; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
+.final4 li { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3); border-radius: var(--r-md); background: rgba(255, 255, 255, .04); }
+.final4 .e { font-size: 1.8rem; }
+.final4 .n { font-weight: 700; flex: 1; }
+.final4 .rank { color: var(--text-subtle); font-size: var(--fs-base); min-width: 3em; }
+.actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: center; }
+@media (min-width: 768px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="screen intro" id="intro">
+    <div class="kicker">CAREER WORLD CUP</div>
+    <h1 class="display">직업 <em>월드컵</em></h1>
+    <div class="stack" aria-hidden="true"><span>🎨</span><span>🔭</span><span>🚀</span></div>
+    <p>직업 32개 중 16개가 무작위로 올라와요. 둘 중 더 끌리는 쪽을 고르다 보면 마지막에 나만의 우승 직업이 남아요. 정답은 없어요!</p>
+    <div class="types-legend" id="legend"></div>
+    <button class="btn" id="startBtn" type="button">16강 시작하기</button>
+  </section>
+
+  <section class="screen" id="game" hidden>
+    <div class="hud">
+      <h2 class="round-name display" id="roundName">16강</h2>
+      <div class="round-count" id="roundCount" aria-live="polite">1 / 8 경기</div>
+      <div class="progress" id="progress" aria-hidden="true"></div>
+    </div>
+    <div class="arena" id="arena"></div>
+    <p class="hint">카드를 누르거나, 키보드 ← → 로 고를 수 있어요.</p>
+  </section>
+
+  <section class="screen result" id="result" hidden>
+    <div class="champ" id="champ"></div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>내가 고른 직업들의 흥미 경향 <span class="ref">참고용</span></h2>
+        <p class="muted">고를 때마다 그 직업의 유형에 1점씩 쌓았어요. 검사 결과가 아니라 오늘 고른 기록이에요.</p>
+        <svg class="radar" id="radar" viewBox="0 0 340 340" role="img" aria-label="흥미 유형 육각형 그래프"></svg>
+        <p class="talk" id="talk"></p>
+      </div>
+      <div class="panel">
+        <h2>끝까지 남긴 4개</h2>
+        <p class="muted">4강에 오른 직업이에요. 공통점이 보이나요?</p>
+        <ol class="final4" id="final4"></ol>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="againBtn" type="button">새 대진으로 다시 하기</button>
+      <button class="btn btn--ghost" id="homeBtn" type="button">처음 화면</button>
+    </div>
+  </section>
+
+</div>
+<script>
+const TYPES = { R: "현실", I: "탐구", A: "예술", S: "사회", E: "진취", C: "관습" };
+const ORDER = ["R", "I", "A", "S", "E", "C"];
+
+// 연수용 자작 예시 (직업 설명은 한 줄 소개일 뿐, 실제 직무 전체가 아님)
+const JOBS = [
+  ["🚁", "드론 조종사", "하늘에서 촬영·방제·측량 임무를 해내요", "R"],
+  ["🔧", "자동차 정비사", "전기차까지 진단하고 직접 고쳐요", "R"],
+  ["🚒", "소방관", "위급한 현장에 가장 먼저 달려가요", "R"],
+  ["👨‍🍳", "셰프", "재료를 다뤄 새로운 요리를 만들어요", "R"],
+  ["🌾", "스마트팜 농부", "센서와 기계로 작물을 키워요", "R"],
+  ["🪚", "가구 제작자", "나무를 깎아 오래 쓸 가구를 만들어요", "R"],
+  ["🔭", "우주 과학자", "별과 행성의 비밀을 관측으로 밝혀요", "I"],
+  ["📊", "데이터 분석가", "숫자 속에서 숨은 규칙을 찾아내요", "I"],
+  ["🧪", "신약 연구원", "실험을 거듭해 새 약의 가능성을 찾아요", "I"],
+  ["🌦️", "기상 연구원", "하늘을 관찰해 날씨 변화를 예측해요", "I"],
+  ["🛡️", "정보보안 전문가", "해킹을 막고 시스템의 빈틈을 찾아요", "I"],
+  ["🐾", "수의사", "말 못 하는 동물의 아픈 곳을 알아내요", "I"],
+  ["🎨", "웹툰 작가", "그림과 이야기로 매주 세계를 만들어요", "A"],
+  ["🎮", "게임 기획자", "규칙과 재미를 설계해 게임을 만들어요", "A"],
+  ["🎵", "작곡가", "머릿속 멜로디를 음악으로 완성해요", "A"],
+  ["👗", "패션 디자이너", "옷으로 사람의 개성을 표현해요", "A"],
+  ["🎬", "영상 크리에이터", "찍고 편집해서 이야기를 전해요", "A"],
+  ["🩺", "간호사", "환자 곁에서 회복을 돌보고 지켜요", "S"],
+  ["💬", "청소년 상담사", "고민을 들어주고 함께 길을 찾아요", "S"],
+  ["🤝", "사회복지사", "도움이 필요한 사람과 지원을 이어 줘요", "S"],
+  ["💪", "물리치료사", "다친 몸이 다시 움직이도록 도와요", "S"],
+  ["🏫", "초등 교사", "아이들이 배우고 자라는 하루를 함께해요", "S"],
+  ["🚀", "스타트업 창업가", "아이디어로 회사를 세우고 키워요", "E"],
+  ["📣", "마케터", "사람들이 알고 싶게 만드는 방법을 짜요", "E"],
+  ["⚖️", "변호사", "의뢰인의 편에 서서 말과 논리로 싸워요", "E"],
+  ["🏟️", "스포츠 에이전트", "선수의 계약과 앞길을 함께 협상해요", "E"],
+  ["✈️", "여행 상품 기획자", "새로운 여행 코스를 만들어 팔아요", "E"],
+  ["🧾", "회계사", "돈의 흐름을 정확하게 정리하고 점검해요", "C"],
+  ["📚", "사서", "책과 자료를 정리해 필요한 사람에게 이어 줘요", "C"],
+  ["🛫", "항공 교통관제사", "수많은 비행기의 길을 순서대로 정리해요", "C"],
+  ["✅", "소프트웨어 테스터", "앱의 오류를 꼼꼼하게 찾아 기록해요", "C"],
+  ["📦", "물류 관리자", "물건이 제때 제자리에 가도록 관리해요", "C"],
+].map(([emoji, name, desc, t]) => ({ emoji, name, desc, t }));
+
+const ROUND_NAMES = { 16: "16강", 8: "8강", 4: "4강", 2: "결승" };
+const $ = id => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let round, next, idx, picks, semis, locked;
+
+$("legend").innerHTML = ORDER.map(t => `<span class="tag" data-t="${t}">${TYPES[t]}</span>`).join("");
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function show(id) { ["intro", "game", "result"].forEach(s => $(s).hidden = s !== id); scrollTo(0, 0); }
+
+function start() {
+  round = shuffle(JOBS.slice()).slice(0, 16);
+  next = []; idx = 0; picks = []; semis = [];
+  show("game"); drawMatch();
+}
+
+function drawProgress() {
+  // 15경기: 16강 8 + 8강 4 + 4강 2 + 결승 1
+  const played = picks.length, sizes = [8, 4, 2, 1];
+  let n = 0, html = "";
+  sizes.forEach((s, r) => { for (let i = 0; i < s; i++, n++) html += `<i class="${n < played ? "done" : n === played ? "now" : ""}${i === 0 && r ? " gap" : ""}"></i>`; });
+  $("progress").innerHTML = html;
+}
+
+function card(job, side) {
+  return `<button type="button" class="pick in-${side}" data-side="${side}" aria-label="${job.name} 고르기">
+    <span class="emoji" aria-hidden="true">${job.emoji}</span>
+    <span class="name">${job.name}</span>
+    <span class="desc">${job.desc}</span>
+    <span class="tag" data-t="${job.t}">${TYPES[job.t]}</span>
+  </button>`;
+}
+
+function drawMatch() {
+  locked = false;
+  const total = round.length / 2;
+  $("roundName").textContent = ROUND_NAMES[round.length];
+  $("roundCount").textContent = round.length === 2 ? "마지막 한 경기!" : `${idx / 2 + 1} / ${total} 경기`;
+  drawProgress();
+  const a = round[idx], b = round[idx + 1];
+  const arena = $("arena");
+  arena.classList.remove("locked");
+  arena.innerHTML = card(a, "left") + `<div class="vs display" aria-hidden="true">VS</div>` + card(b, "right");
+  arena.querySelectorAll(".pick").forEach(el => el.addEventListener("click", () => choose(el.dataset.side)));
+}
+
+function choose(side) {
+  if (locked) return;
+  locked = true;
+  const a = round[idx], b = round[idx + 1];
+  const win = side === "left" ? a : b;
+  const arena = $("arena");
+  arena.classList.add("locked");
+  arena.querySelectorAll(".pick").forEach(el => el.classList.add(el.dataset.side === side ? "win" : "lose"));
+  picks.push(win);
+  next.push(win);
+  if (round.length === 4) semis.push(a, b);
+  setTimeout(() => {
+    idx += 2;
+    if (idx >= round.length) {
+      if (next.length === 1) return finish(win);
+      round = next; next = []; idx = 0;
+    }
+    drawMatch();
+  }, reduce ? 0 : 420);
+}
+
+function confetti() {
+  const colors = ["var(--R)", "var(--I)", "var(--A)", "var(--S)", "var(--E)", "var(--C)"];
+  let html = "";
+  for (let i = 0; i < 40; i++) {
+    html += `<i style="--x:${Math.random() * 100}%;--c:${colors[i % 6]};--d:${1.4 + Math.random() * 1.4}s;--w:${Math.random() * .6}s;--r:${Math.random() * 720 - 360}deg"></i>`;
+  }
+  return `<div class="confetti" aria-hidden="true">${html}</div>`;
+}
+
+function radar(score) {
+  const c = 170, R = 110, max = Math.max(1, ...Object.values(score));
+  const pt = (i, r) => { const ang = -Math.PI / 2 + i * Math.PI / 3; return [c + r * Math.cos(ang), c + r * Math.sin(ang)]; };
+  let g = "";
+  [1, 2 / 3, 1 / 3].forEach(k => g += `<polygon points="${ORDER.map((_, i) => pt(i, R * k).join(",")).join(" ")}" fill="none" stroke="rgba(255,255,255,.15)"/>`);
+  ORDER.forEach((t, i) => {
+    const [x, y] = pt(i, R), [lx, ly] = pt(i, R + 30);
+    g += `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,.12)"/>`;
+    g += `<text x="${lx}" y="${ly + 5}" text-anchor="middle">${TYPES[t]} ${score[t]}</text>`;
+  });
+  const area = ORDER.map((t, i) => pt(i, 8 + (R - 8) * score[t] / max).join(",")).join(" ");
+  g += `<polygon class="area" points="${area}"/>`;
+  ORDER.forEach((t, i) => { const [x, y] = pt(i, 8 + (R - 8) * score[t] / max); g += `<circle cx="${x}" cy="${y}" r="5" fill="var(--${t})"/>`; });
+  return g;
+}
+
+function finish(win) {
+  const score = Object.fromEntries(ORDER.map(t => [t, 0]));
+  picks.forEach(p => score[p.t]++);
+  const top = Math.max(...Object.values(score));
+  const best = ORDER.filter(t => score[t] === top).map(t => TYPES[t]);
+
+  $("champ").innerHTML = `${reduce ? "" : confetti()}
+    <div class="crown" aria-hidden="true">👑</div>
+    <div class="label display">오늘의 우승 직업</div>
+    <div class="emoji" aria-hidden="true">${win.emoji}</div>
+    <div class="name">${win.name}</div>
+    <div class="desc">${win.desc}</div>
+    <span class="tag" data-t="${win.t}">${TYPES[win.t]}</span>`;
+  $("radar").innerHTML = radar(score);
+  $("talk").innerHTML = best.length > 2
+    ? `여러 유형을 골고루 골랐어요. 관심 폭이 넓은 경향이 보여요. 어떻게 생각해요?`
+    : `<b>${best.join("·")}</b> 쪽 직업을 고른 경우가 많은 경향이 보여요. 어떻게 생각해요?`;
+  // picks[12], picks[13] = 결승 진출, picks[14] = 우승
+  const finalists = picks.slice(12, 14);
+  const order = [win, finalists.find(j => j !== win), ...semis.filter(j => !finalists.includes(j))];
+  const ranks = ["우승", "준우승", "4강", "4강"];
+  $("final4").innerHTML = order.map((j, i) => `<li><span class="rank">${ranks[i]}</span><span class="e" aria-hidden="true">${j.emoji}</span><span class="n">${j.name}</span><span class="tag" data-t="${j.t}">${TYPES[j.t]}</span></li>`).join("");
+  show("result");
+}
+
+$("startBtn").addEventListener("click", start);
+$("againBtn").addEventListener("click", start);
+$("homeBtn").addEventListener("click", () => show("intro"));
+addEventListener("keydown", e => {
+  if ($("game").hidden) return;
+  if (e.key === "ArrowLeft") choose("left");
+  if (e.key === "ArrowRight") choose("right");
+});
+</script>
+</body>
+</html>

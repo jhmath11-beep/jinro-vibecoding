@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진로상담 예약</title>
+<!--
+  [하·업무] 진로상담 예약 웹앱 — 상담 업무 / 시작 프롬프트 + 다듬기 3회 수준
+  앱스스크립트에서는 Code.gs 의 getWeek · book · cancel 을 부르고,
+  google.script.run 이 없는 곳(일반 브라우저)에서는 예시 데이터로 도는 "미리보기 모드"가 된다.
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --primary:#14b8a6; --primary-strong:#0d9488; --primary-soft:#ccfbf1; --primary-ink:#115e59;
+  --accent:#6366f1; --accent-soft:#e0e7ff;
+  --bg:#f4f7f8; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#5b6b7f; --text-subtle:#94a3b8;
+  --success:#22c55e; --warning:#f59e0b; --danger:#ef4444; --danger-soft:#fee2e2;
+  --fs-xs:.75rem; --fs-sm:.875rem; --fs-base:1rem; --fs-lg:1.125rem; --fs-xl:1.5rem; --fs-2xl:2rem; --fs-3xl:3rem;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px; --sp-12:48px; --sp-16:64px;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-full:999px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 1px 3px rgba(15,23,42,.06);
+  --shadow-md:0 4px 12px rgba(15,23,42,.06),0 2px 4px rgba(15,23,42,.04);
+  --shadow-lg:0 18px 40px rgba(15,23,42,.14);
+  --container:1080px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing:border-box }
+body { margin:0; font-family:Pretendard,-apple-system,"Segoe UI","Malgun Gothic",sans-serif; color:var(--text);
+  background:var(--bg); font-size:var(--fs-base); line-height:1.6; -webkit-font-smoothing:antialiased }
+button, input, textarea { font:inherit; color:inherit }
+:focus-visible { outline:3px solid var(--primary-soft); outline-offset:2px; box-shadow:0 0 0 1px var(--primary-strong) }
+
+.preview { background:var(--accent-soft); color:#3730a3; font-size:var(--fs-sm); padding:var(--sp-2) var(--sp-4);
+  display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); align-items:center; justify-content:center }
+.preview b { font-weight:700 }
+.preview label { display:inline-flex; align-items:center; gap:var(--sp-2); min-height:44px; cursor:pointer }
+.preview input { width:20px; height:20px; accent-color:var(--accent) }
+
+.wrap { max-width:var(--container); margin:0 auto; padding:var(--sp-6) var(--sp-4) var(--sp-16) }
+header.top { display:flex; flex-wrap:wrap; gap:var(--sp-3); align-items:flex-end; justify-content:space-between; margin-bottom:var(--sp-6) }
+h1 { font-size:var(--fs-2xl); line-height:1.25; margin:0; font-weight:800; letter-spacing:-.02em }
+.sub { margin:var(--sp-1) 0 0; color:var(--text-muted) }
+.who { display:inline-flex; align-items:center; gap:var(--sp-2); background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-full); padding:var(--sp-1) var(--sp-3); font-size:var(--fs-sm); color:var(--text-muted); max-width:100% }
+.who span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.who::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--success); flex:none }
+
+.layout { display:grid; gap:var(--sp-6) }
+@media (min-width:900px) { .layout { grid-template-columns:1fr 320px; align-items:start } .side { position:sticky; top:var(--sp-6) } }
+
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-sm) }
+.cal { padding:var(--sp-4) }
+@media (min-width:600px) { .cal { padding:var(--sp-6) } }
+.weeknav { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); margin-bottom:var(--sp-4) }
+.weeknav h2 { font-size:var(--fs-lg); margin:0; text-align:center; line-height:1.25 }
+.weeknav h2 small { display:block; color:var(--text-muted); font-size:var(--fs-sm); font-weight:500 }
+.icon-btn { width:44px; height:44px; border-radius:var(--r-full); border:1px solid var(--border); background:var(--surface);
+  cursor:pointer; display:grid; place-items:center; transition:background .15s, transform .15s }
+.icon-btn:hover:not(:disabled) { background:var(--primary-soft) }
+.icon-btn:disabled { opacity:.35; cursor:default }
+.icon-btn svg { width:20px; height:20px }
+
+/* 시그니처 1: 주간 슬롯 그리드 */
+.grid { display:grid; grid-template-columns:44px repeat(5, minmax(0,1fr)); gap:6px }
+@media (min-width:600px) { .grid { grid-template-columns:60px repeat(5, minmax(0,1fr)); gap:var(--sp-2) } }
+.dh { text-align:center; padding-bottom:var(--sp-2); font-size:var(--fs-sm); color:var(--text-muted); line-height:1.3 }
+.dh b { display:grid; place-items:center; margin:2px auto 0; width:32px; height:32px; border-radius:50%;
+  font-size:var(--fs-base); color:var(--text) }
+.dh.today b { background:var(--text); color:#fff }
+.tl { font-size:var(--fs-sm); color:var(--text-muted); display:flex; align-items:center; font-variant-numeric:tabular-nums }
+.slot { min-height:48px; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface);
+  font-size:var(--fs-sm); font-weight:600; cursor:pointer; padding:0 2px;
+  transition:transform .2s var(--ease), background .2s, border-color .2s, box-shadow .2s }
+.slot.open { color:var(--primary-ink); border-color:#99f6e4; background:linear-gradient(#fff,#f0fdfa) }
+.slot.open:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:var(--primary) }
+.slot.taken { color:var(--text-muted); cursor:not-allowed;
+  background:repeating-linear-gradient(135deg,#f1f5f9 0 6px,#f8fafc 6px 12px) }
+.slot.closed, .slot.past { color:var(--text-muted); background:transparent; border-style:dashed; cursor:not-allowed }
+.slot.mine { background:var(--primary-strong); border-color:var(--primary-strong); color:#fff; box-shadow:0 6px 16px rgba(13,148,136,.3) }
+.slot.flash { animation:flash .6s var(--ease) }
+@keyframes flash { 0%{ transform:scale(1) } 30%{ transform:scale(1.08); background:var(--danger-soft); border-color:var(--danger) } 100%{ transform:scale(1) } }
+.slot.pop { animation:pop .4s var(--ease) }
+@keyframes pop { 0%{ transform:scale(.85) } 60%{ transform:scale(1.06) } 100%{ transform:scale(1) } }
+.empty-cell { min-height:48px }
+.legend { display:flex; flex-wrap:wrap; gap:var(--sp-2) var(--sp-4); margin-top:var(--sp-4); font-size:var(--fs-sm); color:var(--text-muted) }
+.legend i { display:inline-block; width:14px; height:14px; border-radius:4px; vertical-align:-2px; margin-right:6px; border:1px solid var(--border) }
+.legend .l-open { background:#f0fdfa; border-color:#99f6e4 } .legend .l-taken { background:repeating-linear-gradient(135deg,#e2e8f0 0 3px,#f8fafc 3px 6px) }
+.legend .l-mine { background:var(--primary-strong); border-color:var(--primary-strong) } .legend .l-past { border-style:dashed }
+.state { grid-column:1/-1; text-align:center; padding:var(--sp-12) var(--sp-4); color:var(--text-muted) }
+.state strong { display:block; color:var(--text); font-size:var(--fs-lg); margin-bottom:var(--sp-1) }
+.skeleton .slot { animation:shimmer 1.2s infinite; border-style:solid; background:#eef2f6 }
+@keyframes shimmer { 50% { opacity:.5 } }
+
+/* 시그니처 2: 예약 티켓 */
+.side h3 { font-size:var(--fs-base); margin:0 0 var(--sp-3); color:var(--text-muted); font-weight:600 }
+.ticket { position:relative; display:grid; grid-template-columns:88px 1fr; overflow:hidden; animation:pop .4s var(--ease) }
+.ticket .stub { background:var(--primary-strong); color:#fff; display:grid; place-items:center; text-align:center; padding:var(--sp-4) var(--sp-2); line-height:1.2 }
+.ticket .stub b { display:block; font-size:var(--fs-3xl); font-weight:800; letter-spacing:-.03em; font-variant-numeric:tabular-nums }
+.ticket .stub span { font-size:var(--fs-sm); opacity:.9 }
+.ticket .body { padding:var(--sp-4); border-left:2px dashed var(--border); position:relative }
+.ticket .body::before, .ticket .body::after { content:""; position:absolute; left:-9px; width:16px; height:16px; border-radius:50%; background:var(--bg) }
+.ticket .body::before { top:-8px } .ticket .body::after { bottom:-8px }
+.ticket .time { font-size:var(--fs-xl); font-weight:800; font-variant-numeric:tabular-nums; line-height:1.2 }
+.ticket .topic { color:var(--text-muted); margin:var(--sp-1) 0 var(--sp-3); word-break:keep-all; overflow-wrap:anywhere }
+.no-ticket { padding:var(--sp-6); text-align:center; color:var(--text-muted); border-style:dashed; box-shadow:none }
+.no-ticket svg { width:40px; height:40px; color:var(--primary); margin-bottom:var(--sp-2) }
+.tips { margin-top:var(--sp-6); padding:var(--sp-4); font-size:var(--fs-sm); color:var(--text-muted) }
+.tips ul { margin:0; padding-left:1.2em } .tips li + li { margin-top:var(--sp-1) }
+
+.btn { min-height:44px; padding:0 var(--sp-6); border:0; border-radius:var(--r-md); background:var(--primary-strong); color:#fff;
+  font-weight:700; cursor:pointer; transition:background .15s, transform .15s; display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2) }
+.btn:hover:not(:disabled) { background:var(--primary-ink) }
+.btn:active { transform:translateY(1px) }
+.btn:disabled { opacity:.6; cursor:progress }
+.btn--ghost { background:transparent; color:var(--text); box-shadow:inset 0 0 0 1px var(--border) }
+.btn--ghost:hover:not(:disabled) { background:#f1f5f9 }
+.btn--danger { background:transparent; color:#b91c1c; box-shadow:inset 0 0 0 1px #fecaca; padding:0 var(--sp-4) }
+.btn--danger:hover:not(:disabled) { background:var(--danger-soft) }
+.btn--danger.armed { background:var(--danger); color:#fff; box-shadow:none }
+.spin { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.5); border-top-color:#fff; animation:rot .7s linear infinite }
+@keyframes rot { to { transform:rotate(1turn) } }
+
+/* 예약 창 */
+dialog { border:0; padding:0; border-radius:var(--r-lg); width:min(440px, calc(100vw - 24px)); box-shadow:var(--shadow-lg); color:var(--text) }
+dialog::backdrop { background:rgba(15,23,42,.45) }
+dialog[open] { animation:rise .3s var(--ease) }
+@keyframes rise { from { transform:translateY(24px); opacity:0 } }
+@media (max-width:599px) { dialog { margin:auto auto 12px } }
+.dlg { padding:var(--sp-6) }
+.dlg h2 { margin:0; font-size:var(--fs-xl); line-height:1.25 }
+.dlg .when { color:var(--primary-ink); font-weight:700; margin:var(--sp-1) 0 var(--sp-6) }
+fieldset { border:0; padding:0; margin:0 0 var(--sp-4) }
+legend { font-weight:700; margin-bottom:var(--sp-2) }
+.chips { display:flex; flex-wrap:wrap; gap:var(--sp-2) }
+.chips input { position:absolute; opacity:0; pointer-events:none }
+.chips label { min-height:44px; display:inline-flex; align-items:center; padding:0 var(--sp-4); border-radius:var(--r-full);
+  border:1px solid var(--border); cursor:pointer; transition:background .15s, border-color .15s, color .15s }
+.chips input:checked + label { background:var(--primary-soft); border-color:var(--primary); color:var(--primary-ink); font-weight:700 }
+.chips input:focus-visible + label { outline:3px solid var(--primary-soft); outline-offset:2px }
+textarea { width:100%; min-height:88px; padding:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-sm); resize:vertical }
+textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft) }
+.retry { margin-top:var(--sp-3) }
+.count.over { color:#b91c1c }
+label[for=memo] { display:block; margin-bottom:var(--sp-2) }
+.count { text-align:right; font-size:var(--fs-sm); color:var(--text-muted); font-variant-numeric:tabular-nums }
+.err { color:#b91c1c; background:var(--danger-soft); border-radius:var(--r-sm); padding:var(--sp-2) var(--sp-3); font-size:var(--fs-sm); margin:0 0 var(--sp-3) }
+.actions { display:flex; gap:var(--sp-2); justify-content:flex-end; margin-top:var(--sp-4) }
+.actions .btn { flex:1 } @media (min-width:600px) { .actions .btn { flex:none } }
+
+.toast { width:max-content; max-width:calc(100vw - 32px); position:fixed; left:50%; bottom:var(--sp-6); transform:translate(-50%, 20px); opacity:0; pointer-events:none;
+  background:var(--text); color:#fff; padding:var(--sp-3) var(--sp-4); border-radius:var(--r-md); box-shadow:var(--shadow-lg);
+  max-width:calc(100vw - 32px); transition:opacity .25s, transform .25s var(--ease); z-index:10 }
+.toast.show { opacity:1; transform:translate(-50%,0) }
+.toast.bad { background:#991b1b }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important } }
+</style>
+</head>
+<body>
+<div class="preview" id="preview" hidden>
+  <span><b>미리보기 모드 · 예시 데이터</b> — 앱스스크립트로 배포하면 실제 시트와 연결돼요.</span>
+  <label><input type="checkbox" id="rival"> 다음 예약 때 다른 학생이 먼저 누른 상황 체험</label>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>진로상담 예약</h1>
+      <p class="sub">빈 시간을 누르고 주제를 고르면 선생님께 바로 알림이 가요.</p>
+    </div>
+    <div class="who" id="who" hidden><span></span></div>
+  </header>
+
+  <div class="layout">
+    <section class="card cal" aria-labelledby="weekTitle">
+      <div class="weeknav">
+        <button class="icon-btn" id="prev" aria-label="이전 주"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <h2 id="weekTitle">불러오는 중</h2>
+        <button class="icon-btn" id="next" aria-label="다음 주"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div id="grid" class="grid skeleton" aria-live="polite"></div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="l-open"></i>예약 가능</span><span><i class="l-taken"></i>마감</span>
+        <span><i class="l-mine"></i>내 예약</span><span><i class="l-past"></i>지난 시간·닫힘</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <h3>내 예약</h3>
+      <div id="mine"></div>
+      <div class="card tips">
+        <ul>
+          <li>한 사람당 예약은 한 번에 하나예요.</li>
+          <li>다른 친구의 이름이나 상담 주제는 보이지 않아요.</li>
+          <li>못 오게 되면 미리 취소해서 친구에게 자리를 양보해 주세요.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="dlg" id="form" method="dialog">
+    <h2 id="dlgTitle">이 시간으로 예약할까요?</h2>
+    <p class="when" id="when"></p>
+    <fieldset>
+      <legend>상담 주제</legend>
+      <div class="chips" id="topics"></div>
+    </fieldset>
+    <label for="memo"><b>선생님께 미리 전할 말</b> (선택)</label>
+    <textarea id="memo" placeholder="예: 관심 있는 고등학교가 두 군데인데 고르기 어려워요."></textarea>
+    <div class="count" id="memoCount">0 / 200</div>
+    <p class="err" id="dlgErr" hidden></p>
+    <div class="actions">
+      <button type="button" class="btn btn--ghost" id="close">닫기</button>
+      <button type="submit" class="btn" id="submit">예약하기</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const PREVIEW = typeof google === 'undefined' || !google.script;
+const $ = s => document.querySelector(s);
+const DAY = ['일','월','화','수','목','금','토'];
+
+/* ── 서버 호출: 앱스스크립트면 google.script.run, 아니면 DEMO 의 같은 이름 함수 ── */
+function run(fn, ...args) {
+  return new Promise((ok, fail) => {
+    if (PREVIEW) return setTimeout(() => { try { ok(JSON.parse(JSON.stringify(DEMO[fn](...args)))); } catch (e) { fail(e); } }, 450);
+    google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[fn](...args);
+  });
+}
+const msg = e => String((e && e.message) || e).replace(/^(Exception|Error):\s*/, '');
+
+/* ── 미리보기용 가짜 서버 (Code.gs 와 같은 규칙) ── */
+const DEMO = (() => {
+  const ME = 'student07@example.com';
+  const TOPICS = ['진로 고민','고등학교 진학','진로검사 결과','학과·직업 정보','기타'];
+  const TIMES = ['12:40','13:10','15:40','16:10','16:40'];
+  const p2 = x => String(x).padStart(2,'0');
+  const ymd = d => d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+  const now = new Date(), nowStr = ymd(now)+' '+p2(now.getHours())+':'+p2(now.getMinutes());
+  const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7)); mon.setHours(0,0,0,0);
+  const rows = []; // { id, state, email, topic }
+  for (let w = 0; w < 3; w++) for (let i = 0; i < 5; i++) {
+    const d = new Date(mon); d.setDate(mon.getDate() + w*7 + i);
+    TIMES.forEach((t, k) => {
+      const h = (w*31 + i*7 + k*13) % 10;
+      rows.push({ id: ymd(d)+' '+t, state: h < 3 ? '예약됨' : h === 9 ? '닫힘' : '빈자리',
+        email: h < 3 ? 'student'+p2(10+h)+'@example.com' : '', topic: h < 3 ? '진로 고민' : '' });
+    });
+  }
+  function getWeek(offset) {
+    offset = Math.max(0, Math.min(2, +offset || 0));
+    const days = [0,1,2,3,4].map(i => { const d = new Date(mon); d.setDate(mon.getDate()+offset*7+i); return ymd(d); });
+    const slots = {}, times = {};
+    rows.filter(r => days.includes(r.id.slice(0,10))).forEach(r => {
+      times[r.id.slice(11)] = 1;
+      const mine = r.state === '예약됨' && r.email === ME;
+      slots[r.id] = mine ? 'mine' : r.id <= nowStr ? 'past' : r.state === '빈자리' ? 'open' : r.state === '예약됨' ? 'taken' : 'closed';
+    });
+    const mineList = rows.filter(r => r.state === '예약됨' && r.email === ME && r.id > nowStr)
+      .map(r => ({ id:r.id, date:r.id.slice(0,10), time:r.id.slice(11), topic:r.topic }));
+    return { me:ME, offset, maxOffset:2, today:nowStr.slice(0,10), days, times:Object.keys(times).sort(), slots, mine:mineList, topics:TOPICS, slotMin:30, memoMax:200 };
+  }
+  function book(id, topic, memo, offset) {
+    if (!TOPICS.includes(topic)) throw new Error('상담 주제를 하나 골라 주세요.');
+    if (String(memo).length > 200) throw new Error('메모는 200자까지 쓸 수 있어요.');
+    const r = rows.find(x => x.id === id);
+    if (!r) throw new Error('그 시간이 목록에서 사라졌어요. 새로고침해 주세요.');
+    if ($('#rival').checked) { // 동시 예약 체험: 잠금 안에서 확인해 보니 이미 다른 학생이 먼저
+      $('#rival').checked = false;
+      Object.assign(r, { state:'예약됨', email:'student21@example.com', topic:'기타' });
+    }
+    if (r.state !== '빈자리') throw new Error('방금 다른 학생이 이 시간을 예약했어요. 다른 시간을 골라 주세요.');
+    if (rows.some(x => x.state === '예약됨' && x.email === ME && x.id > nowStr)) throw new Error('이미 예약이 있어요. 내 예약을 취소한 뒤 다시 골라 주세요.');
+    Object.assign(r, { state:'예약됨', email:ME, topic: topic + (memo ? ' · ' + memo : '') });
+    return getWeek(offset);
+  }
+  function cancel(id, offset) {
+    const r = rows.find(x => x.id === id);
+    if (!r || r.email !== ME) throw new Error('내 예약을 찾지 못했어요. 새로고침해 주세요.');
+    Object.assign(r, { state:'빈자리', email:'', topic:'' });
+    return getWeek(offset);
+  }
+  return { getWeek, book, cancel };
+})();
+
+/* ── 화면 ── */
+let W = null, offset = 0, picked = null;
+const dateObj = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const label = s => { const d = dateObj(s); return (d.getMonth()+1)+'월 '+d.getDate()+'일('+DAY[d.getDay()]+')'; };
+const endTime = (t, min) => { const [h,m] = t.split(':').map(Number), x = h*60+m+min; return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0'); };
+const TEXT = { open:'가능', taken:'마감', mine:'내 예약', past:'지남', closed:'닫힘' };
+
+function toast(text, bad) {
+  const t = $('#toast'); t.textContent = text; t.classList.toggle('bad', !!bad); t.classList.add('show');
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function skeleton() {
+  const g = $('#grid'); g.className = 'grid skeleton'; g.innerHTML = '<div></div>' + '<div class="dh">&nbsp;<b></b></div>'.repeat(5)
+    + ('<div class="tl"></div>' + '<div class="slot"></div>'.repeat(5)).repeat(4);
+}
+
+function render(data, changed) {
+  W = data; offset = data.offset;
+  $('#who').hidden = false; $('#who span').textContent = data.me;
+  const d0 = dateObj(data.days[0]), d4 = dateObj(data.days[4]);
+  $('#weekTitle').innerHTML = (d0.getMonth()+1)+'월 '+d0.getDate()+'일 – '+(d4.getMonth()===d0.getMonth()?'':(d4.getMonth()+1)+'월 ')+d4.getDate()+'일'
+    + '<small>' + (offset === 0 ? '이번 주' : offset === 1 ? '다음 주' : offset + '주 뒤') + '</small>';
+  $('#prev').disabled = offset <= 0;
+  $('#next').disabled = offset >= (data.maxOffset ?? 3);
+  const g = $('#grid'); g.className = 'grid';
+  if (!data.times.length) {
+    g.innerHTML = '<div class="state"><strong>이번 주에는 열린 상담 시간이 없어요</strong>다음 주를 눌러 보거나, 선생님께 직접 말씀드려 주세요.</div>';
+  } else {
+    let h = '<div></div>' + data.days.map(d => { const x = dateObj(d);
+      return `<div class="dh${d === data.today ? ' today' : ''}">${DAY[x.getDay()]}<b>${x.getDate()}</b></div>`; }).join('');
+    data.times.forEach(t => {
+      h += `<div class="tl">${t}</div>`;
+      data.days.forEach(d => {
+        const id = d + ' ' + t, s = data.slots[id];
+        if (!s) { h += '<div class="empty-cell"></div>'; return; }
+        const can = s === 'open';
+        h += `<button class="slot ${s}${changed === id ? (s === 'mine' ? ' pop' : ' flash') : ''}" data-id="${id}" ${can ? '' : 'aria-disabled="true"'}
+          aria-label="${label(d)} ${t} ${TEXT[s]}">${TEXT[s]}</button>`;
+      });
+    });
+    g.innerHTML = h;
+  }
+  renderMine();
+}
+
+function renderMine() {
+  const box = $('#mine');
+  if (!W.mine.length) {
+    box.innerHTML = `<div class="card no-ticket"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <div>아직 예약이 없어요.<br>달력에서 <b>가능</b> 칸을 눌러 보세요.</div></div>`;
+    return;
+  }
+  box.innerHTML = W.mine.map(m => { const d = dateObj(m.date);
+    return `<div class="card ticket"><div class="stub"><div><b>${d.getDate()}</b><span>${d.getMonth()+1}월 ${DAY[d.getDay()]}요일</span></div></div>
+      <div class="body"><div class="time">${m.time} – ${endTime(m.time, W.slotMin)}</div>
+      <div class="topic"></div>
+      <button class="btn btn--danger" data-cancel="${m.id}">예약 취소</button></div></div>`; }).join('');
+  box.querySelectorAll('.topic').forEach((el, i) => el.textContent = W.mine[i].topic); // 사용자 글자는 textContent 로
+}
+
+async function load(o) {
+  skeleton();
+  try { render(await run('getWeek', o)); }
+  catch (e) { $('#grid').className = 'grid'; $('#grid').innerHTML = `<div class="state"><strong>시간표를 불러오지 못했어요</strong>${msg(e)}<br><button class="btn btn--ghost retry" onclick="load(offset)">다시 불러오기</button></div>`; }
+}
+
+$('#prev').onclick = () => load(offset - 1);
+$('#next').onclick = () => load(offset + 1);
+
+$('#grid').addEventListener('click', e => {
+  const b = e.target.closest('.slot'); if (!b) return;
+  const s = W.slots[b.dataset.id];
+  if (s === 'taken') return toast('이미 다른 학생이 예약한 시간이에요.');
+  if (s === 'mine') return toast('내 예약이에요. 오른쪽(아래) 카드에서 취소할 수 있어요.');
+  if (s !== 'open') return toast('지났거나 닫힌 시간이에요.');
+  picked = b.dataset.id;
+  const [d, t] = picked.split(' ');
+  $('#when').textContent = `${label(d)} ${t} – ${endTime(t, W.slotMin)}`;
+  $('#topics').innerHTML = W.topics.map((x, i) => `<input type="radio" name="topic" id="tp${i}" value="${x}"><label for="tp${i}">${x}</label>`).join('');
+  $('#memo').value = ''; $('#memoCount').textContent = '0 / ' + W.memoMax;
+  $('#dlgErr').hidden = true;
+  $('#dlg').showModal();
+});
+$('#memo').addEventListener('input', e => {
+  const n = e.target.value.length; $('#memoCount').textContent = n + ' / ' + W.memoMax;
+  $('#memoCount').classList.toggle('over', n > W.memoMax);
+});
+$('#close').onclick = () => $('#dlg').close();
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const topic = (document.querySelector('input[name=topic]:checked') || {}).value;
+  const err = $('#dlgErr');
+  if (!topic) { err.textContent = '상담 주제를 하나 골라 주세요.'; err.hidden = false; return; }
+  if ($('#memo').value.length > W.memoMax) { err.textContent = '메모를 ' + W.memoMax + '자 안으로 줄여 주세요.'; err.hidden = false; return; }
+  const btn = $('#submit'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>예약하는 중';
+  try {
+    const data = await run('book', picked, topic, $('#memo').value.trim(), offset);
+    $('#dlg').close(); render(data, picked);
+    toast('예약했어요. 선생님께 알림이 갔어요.');
+  } catch (ex) {
+    $('#dlg').close(); toast(msg(ex), true);
+    try { render(await run('getWeek', offset), picked); } catch (_) {}
+  } finally { btn.disabled = false; btn.textContent = '예약하기'; }
+});
+
+$('#mine').addEventListener('click', async e => {
+  const b = e.target.closest('[data-cancel]'); if (!b) return;
+  if (!b.classList.contains('armed')) { // 실수 방지: 두 번 눌러야 취소
+    b.classList.add('armed'); b.textContent = '한 번 더 누르면 취소돼요';
+    setTimeout(() => { if (b.isConnected) { b.classList.remove('armed'); b.textContent = '예약 취소'; } }, 3000);
+    return;
+  }
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>취소하는 중';
+  try { const id = b.dataset.cancel; render(await run('cancel', id, offset), id); toast('예약을 취소했어요.'); }
+  catch (ex) { toast(msg(ex), true); b.disabled = false; b.textContent = '예약 취소'; }
+});
+
+if (PREVIEW) $('#preview').hidden = false;
+load(0);
+</script>
+</body>
+</html>

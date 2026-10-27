@@ -1,0 +1,538 @@
+<!doctype html>
+<!--
+  과제명: 진로 상담 대시보드 — 세 렌즈 프로필
+  성취기준: [9진로01-02] 자신의 진로 특성 파악 / [9진로03-01] 진로의사결정 / [9진로03-02] 진로 경로 설정
+  이 샘플은 시작 프롬프트 + 다듬기 3회 수준 (다듬기: 겹침 다이어그램, 질문 카드 뽑기, 저장·지우기 분리).
+  사용: 교사와 학생이 한 화면을 같이 보며 검사 "결과값"만 옮겨 적는다. 검사 문항·해석 문구는 넣지 않는다.
+  개인정보: 기본은 아무것도 저장하지 않음. [이 기기에 저장]을 눌렀을 때만 localStorage. 네트워크 요청은 폰트 CDN뿐.
+  ponytail: 직업 후보는 매핑표(JOBS) 규칙 일치일 뿐 추천 알고리즘이 아님. 직업을 늘리려면 JOBS에 줄만 추가.
+  ponytail: 적성·가치관 영역 이름은 커리어넷에서 확인 전이라 "예시" 상수로 분리(APTITUDES, VALUES). 학교 결과지에 맞춰 바꿔 쓸 것.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진로 상담 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --primary: #2f6f73;          /* 차분한 청록 — 메인 액션 */
+  --primary-strong: #245a5d;
+  --primary-soft: #dcecec;
+  --accent: #b7791f;
+
+  /* 세 렌즈 */
+  --lens-int: #3a74b8;  --lens-int-soft: #e3edf8;   /* 흥미 */
+  --lens-apt: #2f8f6b;  --lens-apt-soft: #e0f1e9;   /* 적성 */
+  --lens-val: #b7791f;  --lens-val-soft: #f6ecdc;   /* 가치관 */
+
+  --bg: #f5f6f4;
+  --surface: #ffffff;
+  --border: #e1e4e0;
+  --text: #1c2526;
+  --text-muted: #56625f;
+  --text-subtle: #8a9592;
+
+  --success: #2f8f6b;
+  --warning: #b7791f;
+  --danger: #c2413b;
+
+  --fs-xs: .75rem; --fs-sm: .875rem; --fs-base: 1rem; --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem; --fs-2xl: 2rem; --fs-3xl: 3rem;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-6: 24px; --sp-8: 32px; --sp-12: 48px; --sp-16: 64px;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(28,37,38,.04), 0 1px 3px rgba(28,37,38,.06);
+  --shadow-md: 0 4px 12px rgba(28,37,38,.07), 0 2px 4px rgba(28,37,38,.04);
+  --container: 1200px;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  color: var(--text); background: var(--bg); font-size: var(--fs-base); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--primary-soft); outline-offset: 2px; box-shadow: 0 0 0 1px var(--primary); }
+[hidden] { display: none !important; }
+
+.wrap { max-width: var(--container); margin: 0 auto; padding: 0 var(--sp-4); }
+.btn { min-height: 44px; padding: 0 var(--sp-4); border: 0; border-radius: var(--r-md); background: var(--primary);
+  color: #fff; font-weight: 600; cursor: pointer; transition: background .15s, transform .15s var(--ease); }
+.btn:hover { background: var(--primary-strong); }
+.btn:active { transform: translateY(1px); }
+.btn--ghost { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.btn--ghost:hover { background: var(--bg); }
+.btn--danger { background: var(--surface); color: var(--danger); box-shadow: inset 0 0 0 1px #ecc9c6; }
+.btn--danger:hover { background: #fbefee; }
+
+/* 상단 */
+.privacy { background: #fff7e8; border-bottom: 1px solid #f0dfbd; color: #6b4a12; }
+.privacy .wrap { display: flex; gap: var(--sp-3); align-items: center; flex-wrap: wrap; padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+.privacy p { margin: 0; flex: 1 1 260px; }
+header.top { padding: var(--sp-8) 0 var(--sp-6); }
+header.top .wrap { display: flex; gap: var(--sp-4); align-items: end; flex-wrap: wrap; }
+.top h1 { font-size: var(--fs-2xl); font-weight: 800; }
+.top p { margin: var(--sp-1) 0 0; color: var(--text-muted); }
+.top .tools { margin-left: auto; display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.status { color: var(--text-muted); font-size: var(--fs-sm); min-height: 1.6em; margin: var(--sp-2) 0 0; }
+
+/* 레이아웃 */
+.layout { display: grid; gap: var(--sp-6); padding-bottom: var(--sp-16); }
+@media (min-width: 1000px) { .layout { grid-template-columns: 400px 1fr; align-items: start; } }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
+  padding: var(--sp-6); min-width: 0; }
+.card + .card { margin-top: var(--sp-6); }
+.card h2 { font-size: var(--fs-lg); font-weight: 700; display: flex; align-items: center; gap: var(--sp-2); }
+.card .hint { color: var(--text-muted); margin: var(--sp-1) 0 var(--sp-4); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.int { background: var(--lens-int); } .dot.apt { background: var(--lens-apt); } .dot.val { background: var(--lens-val); }
+.tag-ex { font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-full); padding: 0 var(--sp-2); }
+
+.field { display: grid; gap: var(--sp-1); }
+.row { display: grid; gap: var(--sp-3); grid-template-columns: 1fr 1fr; }
+label { font-weight: 600; font-size: var(--fs-sm); color: var(--text-muted); }
+.input { width: 100%; min-height: 44px; padding: 0 var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); font-size: var(--fs-base); }
+textarea.input { padding: var(--sp-2) var(--sp-3); min-height: 88px; resize: vertical; }
+.input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.input.bad { border-color: var(--danger); }
+
+/* 흥미 점수 */
+.scores { display: grid; gap: var(--sp-2); }
+.score { display: grid; grid-template-columns: 4.5em 1fr 4.5em; gap: var(--sp-3); align-items: center; }
+.score span { font-weight: 600; }
+.score .bar { height: 8px; background: var(--lens-int-soft); border-radius: var(--r-full); overflow: hidden; }
+.score .bar i { display: block; height: 100%; background: var(--lens-int); border-radius: inherit; transition: width .3s var(--ease); }
+.score .input { text-align: right; font-variant-numeric: tabular-nums; padding: 0 var(--sp-2); }
+.err { color: var(--danger); margin: var(--sp-2) 0 0; min-height: 1.6em; }
+
+/* 칩 선택 */
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.chip { min-height: 44px; padding: 0 var(--sp-3); border-radius: var(--r-full); border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; gap: var(--sp-1);
+  transition: background .15s, border-color .15s, transform .15s var(--ease); }
+.chip:hover { border-color: var(--text-subtle); }
+.chip:active { transform: scale(.97); }
+.chip b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: var(--fs-xs); color: #fff; }
+.apt .chip[aria-pressed="true"] { background: var(--lens-apt-soft); border-color: var(--lens-apt); }
+.apt .chip b { background: var(--lens-apt); }
+.val .chip[aria-pressed="true"] { background: var(--lens-val-soft); border-color: var(--lens-val); }
+.val .chip b { background: var(--lens-val); }
+
+/* 프로필 */
+.profile { display: grid; gap: var(--sp-6); }
+@media (min-width: 720px) { .profile { grid-template-columns: 260px 1fr; } }
+.radar svg { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
+.radar text { font-size: 13px; fill: var(--text-muted); font-family: inherit; }
+.radar .poly { fill: rgba(58,116,184,.18); stroke: var(--lens-int); stroke-width: 2; transition: all .3s var(--ease); }
+.code { text-align: center; margin: var(--sp-2) 0 0; color: var(--text-muted); }
+.code b { color: var(--lens-int); font-size: var(--fs-xl); }
+.lenses { display: grid; gap: var(--sp-4); align-content: start; }
+.lens { border-left: 4px solid; padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+.lens.int { border-color: var(--lens-int); } .lens.apt { border-color: var(--lens-apt); } .lens.val { border-color: var(--lens-val); }
+.lens h3 { font-size: var(--fs-sm); color: var(--text-muted); font-weight: 600; }
+.lens p { margin: 0; font-weight: 700; font-size: var(--fs-lg); }
+.lens p.empty { font-weight: 400; color: var(--text-subtle); font-size: var(--fs-base); }
+
+/* 겹침 다이어그램 (시그니처) */
+.venn-wrap { display: grid; gap: var(--sp-6); }
+@media (min-width: 720px) { .venn-wrap { grid-template-columns: minmax(280px, 400px) 1fr; align-items: start; } }
+.venn svg { width: 100%; display: block; }
+.venn circle { mix-blend-mode: multiply; transition: opacity .3s; }
+.venn .lab { font-size: 15px; font-weight: 700; font-family: inherit; }
+.venn .job { font-size: 15px; font-family: inherit; fill: var(--text); font-weight: 600; }
+.venn .job.core { font-size: 16px; font-weight: 800; }
+.cands { display: grid; gap: var(--sp-3); }
+.notice { margin: 0; padding: var(--sp-3) var(--sp-4); background: var(--bg); border-radius: var(--r-sm); color: var(--text-muted); }
+.notice b { color: var(--text); }
+.cand { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border); border-radius: var(--r-md); animation: rise .3s var(--ease) both; }
+.cand strong { margin-right: auto; }
+.cand.core { border-color: var(--primary); background: #f3f8f8; }
+.pill { font-size: var(--fs-sm); font-weight: 600; padding: 0 var(--sp-2); border-radius: var(--r-full); }
+.pill.int { background: var(--lens-int-soft); color: #234d7d; }
+.pill.apt { background: var(--lens-apt-soft); color: #1d5c44; }
+.pill.val { background: var(--lens-val-soft); color: #7a4f12; }
+.empty-state { color: var(--text-muted); padding: var(--sp-6); text-align: center; border: 1px dashed var(--border); border-radius: var(--r-md); margin: 0; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* 질문 카드 */
+.deck { display: grid; gap: var(--sp-4); }
+@media (min-width: 720px) { .deck { grid-template-columns: 1fr auto; align-items: center; } }
+.qcard { perspective: 900px; min-height: 140px; }
+.qcard .face { min-height: 140px; display: grid; place-items: center; padding: var(--sp-6); border-radius: var(--r-lg);
+  text-align: center; font-size: var(--fs-lg); font-weight: 600; background: linear-gradient(135deg, #f3f8f8, #eef2ef);
+  border: 1px solid var(--border); transition: transform .35s var(--ease); }
+.qcard.flip .face { transform: rotateY(90deg); }
+.qcard .face small { display: block; color: var(--text-muted); font-size: var(--fs-sm); font-weight: 600; margin-bottom: var(--sp-2); }
+.deck .btns { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+/* 경로 메모 */
+.paths { display: grid; gap: var(--sp-4); }
+@media (min-width: 720px) { .paths { grid-template-columns: 1fr 1fr; } }
+.path { display: grid; gap: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-md); border: 1px solid var(--border); }
+.path.main { border-color: var(--primary); }
+.path.alt { border-style: dashed; }
+.path h3 { font-size: var(--fs-base); }
+
+.summary { white-space: pre-wrap; background: var(--bg); border-radius: var(--r-sm); padding: var(--sp-4); margin: 0 0 var(--sp-4);
+  font: inherit; max-height: 320px; overflow: auto; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media print { .privacy, .tools, .deck .btns, #copyBtn { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+
+<div class="privacy" role="note">
+  <div class="wrap">
+    <p><b>학생 개인정보가 담기는 화면입니다.</b> 기본은 저장하지 않아요. 공용 PC에서는 저장하지 말고, 상담이 끝나면 지우세요.</p>
+    <button class="btn btn--danger" id="wipeBtn" type="button">이 기기에서 모두 지우기</button>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>진로 상담 대시보드</h1>
+      <p>흥미 · 적성 · 가치관, 세 렌즈가 겹치는 곳에서 이야기를 시작해요.</p>
+    </div>
+    <div class="tools">
+      <button class="btn btn--ghost" id="demoBtn" type="button">데모 학생 채우기</button>
+      <select class="input" id="savedSel" aria-label="저장된 상담 기록 불러오기" hidden></select>
+      <button class="btn btn--ghost" id="newBtn" type="button">새 상담</button>
+      <button class="btn" id="saveBtn" type="button">이 기기에 저장</button>
+    </div>
+  </div>
+  <div class="wrap"><p class="status" id="status" aria-live="polite"></p></div>
+</header>
+
+<main class="wrap layout">
+  <!-- 왼쪽: 입력 -->
+  <div>
+    <section class="card">
+      <h2>학생</h2>
+      <div class="row">
+        <div class="field"><label for="fName">이름</label><input class="input" id="fName" maxlength="20" autocomplete="off" placeholder="예: 한지우"></div>
+        <div class="field"><label for="fClass">학년·반</label><input class="input" id="fClass" maxlength="12" autocomplete="off" placeholder="예: 3-2"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="dot int"></span>흥미 6유형 점수</h2>
+      <p class="hint">검사 결과지의 점수(0~100)를 옮겨 적어요.</p>
+      <div class="scores" id="scores"></div>
+      <p class="err" id="scoreErr" aria-live="polite"></p>
+    </section>
+
+    <section class="card apt">
+      <h2><span class="dot apt"></span>적성 강점 <span class="tag-ex">영역 이름 예시</span></h2>
+      <p class="hint">결과지에서 높게 나온 영역을 순서대로 3개까지 눌러요.</p>
+      <div class="chips" id="aptChips"></div>
+    </section>
+
+    <section class="card val">
+      <h2><span class="dot val"></span>가치관 상위 항목 <span class="tag-ex">항목 이름 예시</span></h2>
+      <p class="hint">중요하게 나온 순서대로 3개까지 눌러요.</p>
+      <div class="chips" id="valChips"></div>
+    </section>
+  </div>
+
+  <!-- 오른쪽: 보드 -->
+  <div>
+    <section class="card">
+      <h2 id="profTitle">종합 프로필</h2>
+      <div class="profile">
+        <div class="radar"><div id="radar"></div><p class="code" id="code"></p></div>
+        <div class="lenses" id="lenses"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>세 렌즈가 겹치는 직업</h2>
+      <p class="hint">흥미 상위 2유형 · 적성 강점 · 가치관 상위 항목이 직업 매핑표와 얼마나 겹치는지 보여 줘요.</p>
+      <div class="venn-wrap">
+        <div class="venn" id="venn"></div>
+        <div class="cands">
+          <p class="notice"><b>확인할 후보 예시이며, 추천이 아닙니다.</b> 커리어넷 직업정보에서 하는 일과 준비 과정을 함께 찾아보세요.</p>
+          <div class="cands" id="cands"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>상담 질문 카드</h2>
+      <p class="hint">뽑은 질문으로 학생이 먼저 말하게 해 보세요.</p>
+      <div class="deck">
+        <div class="qcard" id="qcard"><div class="face" id="qface"><span>카드를 뽑으면 질문이 나와요.</span></div></div>
+        <div class="btns">
+          <button class="btn" id="drawBtn" type="button">질문 뽑기</button>
+          <button class="btn btn--ghost" id="keepBtn" type="button">메모에 담기</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>진로 경로 메모</h2>
+      <p class="hint">지금의 잠정적인 결정이에요. 경험이 쌓이면 바뀔 수 있어요.</p>
+      <div class="paths">
+        <div class="path main">
+          <h3>우선 경로</h3>
+          <div class="field"><label for="pJob">관심 직업</label><input class="input" id="pJob" list="jobList" autocomplete="off"></div>
+          <div class="field"><label for="pSchool">고등학교·학과 방향</label><input class="input" id="pSchool" autocomplete="off"></div>
+          <div class="field"><label for="pTodo">이번 학기에 해 볼 일</label><textarea class="input" id="pTodo"></textarea></div>
+        </div>
+        <div class="path alt">
+          <h3>대안 경로</h3>
+          <div class="field"><label for="aJob">관심 직업</label><input class="input" id="aJob" list="jobList" autocomplete="off"></div>
+          <div class="field"><label for="aSchool">고등학교·학과 방향</label><input class="input" id="aSchool" autocomplete="off"></div>
+          <div class="field"><label for="aTodo">이번 학기에 해 볼 일</label><textarea class="input" id="aTodo"></textarea></div>
+        </div>
+      </div>
+      <div class="field"><label for="notes">상담 메모</label><textarea class="input" id="notes" placeholder="학생이 한 말, 다음 상담 때 확인할 것"></textarea></div>
+      <datalist id="jobList"></datalist>
+    </section>
+
+    <section class="card">
+      <h2>요약</h2>
+      <p class="hint">학습지나 상담 기록에 붙여 넣을 수 있게 글로 정리했어요.</p>
+      <pre class="summary" id="summary"></pre>
+      <button class="btn" id="copyBtn" type="button">요약 복사</button>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ===== 상수: 학교 상황에 맞게 고치는 곳 ===== */
+const RIASEC = [['R','현실형'],['I','탐구형'],['A','예술형'],['S','사회형'],['E','진취형'],['C','관습형']];
+// 예시: 커리어넷 결과지 영역 이름과 대조 전. 학교에서 쓰는 검사의 영역 이름으로 바꿔 쓰세요.
+const APTITUDES = ['신체·운동','손재능','공간지각','음악','창의','언어','수리·논리','자기성찰','대인관계','자연친화','예술시각'];
+// 예시: 직업가치관 항목 이름도 대조 전. 결과지와 다르면 바꿔 쓰세요.
+const VALUES = ['능력발휘','자율성','보수','안정성','사회적 인정','사회봉사','자기계발','창의성'];
+// 직업 매핑표(규칙 기반 예시). r=관련 흥미 유형(첫 글자가 주 유형, 겹침 판정은 주 유형만), a=관련 적성, v=관련 가치관. 연봉·전망 수치는 넣지 않음.
+const JOBS = [
+  ['로봇공학 연구원','IR',['수리·논리','공간지각','창의'],['자기계발','능력발휘','창의성']],
+  ['자동차 정비원','RC',['손재능','공간지각'],['안정성','능력발휘']],
+  ['소방관','RS',['신체·운동','대인관계'],['사회봉사','안정성']],
+  ['조경 기술자','RA',['자연친화','공간지각','예술시각'],['자율성','창의성']],
+  ['수의사','IR',['자연친화','수리·논리'],['사회봉사','능력발휘']],
+  ['데이터 분석가','IC',['수리·논리'],['보수','자기계발','능력발휘']],
+  ['환경공학 기술자','IR',['자연친화','수리·논리'],['사회봉사','자기계발']],
+  ['약사','IS',['수리·논리','대인관계'],['안정성','사회적 인정']],
+  ['게임 그래픽 디자이너','AI',['예술시각','창의','공간지각'],['창의성','자율성']],
+  ['작곡가','AE',['음악','창의'],['자율성','창의성','사회적 인정']],
+  ['웹툰 작가','AE',['예술시각','언어','창의'],['자율성','창의성']],
+  ['방송 프로듀서','AE',['언어','창의','대인관계'],['능력발휘','사회적 인정']],
+  ['초등학교 교사','SA',['언어','대인관계'],['사회봉사','안정성']],
+  ['간호사','SI',['대인관계','신체·운동'],['사회봉사','안정성']],
+  ['사회복지사','SE',['대인관계','자기성찰'],['사회봉사']],
+  ['상담 심리사','SI',['자기성찰','대인관계','언어'],['사회봉사','자기계발']],
+  ['물리치료사','SR',['신체·운동','대인관계'],['사회봉사','안정성']],
+  ['스포츠 트레이너','SR',['신체·운동','대인관계'],['능력발휘','자율성']],
+  ['창업가','EA',['대인관계','창의','언어'],['자율성','보수','능력발휘']],
+  ['마케팅 기획자','EA',['언어','창의','대인관계'],['능력발휘','보수','창의성']],
+  ['기자','EI',['언어','자기성찰'],['사회적 인정','능력발휘']],
+  ['변호사','ES',['언어','수리·논리'],['사회적 인정','보수','사회봉사']],
+  ['회계사','CI',['수리·논리'],['안정성','보수']],
+  ['사서','CS',['언어','자기성찰'],['안정성','자기계발']],
+  ['공무원(행정)','CS',['언어','대인관계'],['안정성','사회봉사']],
+  ['항공 교통 관제사','CR',['공간지각','수리·논리'],['안정성','능력발휘']],
+].map(([name, r, a, v]) => ({ name, r: r.split(''), a, v }));
+// 상담 질문 카드. {흥미} {적성} {가치} {후보} 자리는 프로필로 채워짐.
+const QUESTIONS = [
+  ['흥미', '{흥미} 쪽 활동을 하다가 시간 가는 줄 몰랐던 때가 있었나요?'],
+  ['흥미', '점수가 가장 낮게 나온 유형의 활동 중에서도 해 보고 싶은 게 있나요?'],
+  ['적성', '친구들이 "{적성}" 쪽으로 너를 찾아온 적이 있나요? 그때 무엇을 했나요?'],
+  ['적성', '잘하지만 별로 즐겁지 않은 일, 즐겁지만 아직 서툰 일이 있다면?'],
+  ['가치관', '"{가치}"이(가) 지켜지지 않는 직업이라면 어떨 것 같나요?'],
+  ['가치관', '10년 뒤 어떤 하루를 보내고 있으면 "잘 살고 있다"고 느낄까요?'],
+  ['경로', '{후보}이(가) 되려면 지금부터 어떤 경험을 해 볼 수 있을까요?'],
+  ['경로', '우선 경로가 막힌다면, 지금까지 준비한 것 중 무엇을 대안 경로로 가져갈 수 있나요?'],
+  ['경로', '이 결과 중에서 "이건 나랑 다른데?" 싶은 부분이 있나요?'],
+  ['자기 이해', '부모님이나 친구는 나를 어떤 사람이라고 말하나요? 결과와 비슷한가요?'],
+];
+const DEMO = { name: '한지우', cls: '3-2', s: { R: 38, I: 72, A: 81, S: 45, E: 56, C: 30 },
+  apt: ['예술시각', '창의', '공간지각'], val: ['창의성', '자율성', '자기계발'],
+  pJob: '게임 그래픽 디자이너', pSchool: '일반고에서 미술·정보 선택 과목, 이후 디자인 계열 학과', pTodo: '방과후 3D 모델링 수업 신청, 포트폴리오용 그림 한 달에 2장',
+  aJob: '로봇공학 연구원', aSchool: '일반고 이과 과목 중심, 공학 계열', aTodo: '과학 동아리에서 아두이노 프로젝트 해 보기', notes: '' };
+const STORE_KEY = 'counselBoard.v1';
+/* ===== 상수 끝 ===== */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const FIELDS = ['fName','fClass','pJob','pSchool','pTodo','aJob','aSchool','aTodo','notes'];
+const KEYS = ['name','cls','pJob','pSchool','pTodo','aJob','aSchool','aTodo','notes'];
+let apt = [], val = [], lastQ = '';
+
+/* ---------- 입력 화면 만들기 ---------- */
+$('scores').innerHTML = RIASEC.map(([k, n]) => `<div class="score"><span>${n}</span>
+  <div class="bar" aria-hidden="true"><i id="bar${k}"></i></div>
+  <input class="input" id="s${k}" type="number" inputmode="numeric" min="0" max="100" aria-label="${n} 점수"></div>`).join('');
+const chipsHtml = (list, sel) => list.map(x => { const i = sel.indexOf(x);
+  return `<button type="button" class="chip" data-v="${esc(x)}" aria-pressed="${i >= 0}">${i >= 0 ? `<b>${i + 1}</b>` : ''}${esc(x)}</button>`; }).join('');
+function drawChips() { $('aptChips').innerHTML = chipsHtml(APTITUDES, apt); $('valChips').innerHTML = chipsHtml(VALUES, val); }
+function toggle(arr, v) { const i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else if (arr.length < 3) arr.push(v);
+  else { status('3개까지 고를 수 있어요. 하나를 먼저 빼 주세요.'); return; } }
+$('aptChips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; toggle(apt, c.dataset.v); drawChips(); update(); $('aptChips').querySelector(`[data-v="${c.dataset.v}"]`).focus(); };
+$('valChips').onclick = e => { const c = e.target.closest('.chip'); if (!c) return; toggle(val, c.dataset.v); drawChips(); update(); $('valChips').querySelector(`[data-v="${c.dataset.v}"]`).focus(); };
+document.querySelector('main').addEventListener('input', update);
+
+function status(t) { $('status').textContent = t; }
+
+/* ---------- 읽기 ---------- */
+function readScores() {
+  const s = {}; let bad = false;
+  RIASEC.forEach(([k]) => { const el = $('s' + k), raw = el.value.trim(), v = Number(raw);
+    const ok = raw === '' || (Number.isFinite(v) && v >= 0 && v <= 100);
+    el.classList.toggle('bad', !ok); if (!ok) bad = true;
+    s[k] = raw !== '' && ok ? v : null; });
+  $('scoreErr').textContent = bad ? '점수는 0~100 사이 숫자로 넣어 주세요.' : '';
+  return s;
+}
+function topTwo(s) {
+  const filled = RIASEC.filter(([k]) => s[k] !== null);
+  if (filled.length < 6) return [];
+  return [...filled].sort((a, b) => s[b[0]] - s[a[0]]).slice(0, 2).map(([k]) => k);
+}
+const nameOf = k => RIASEC.find(x => x[0] === k)[1];
+
+/* ---------- 매칭(규칙 기반) ---------- */
+function match(top) {
+  return JOBS.map(j => {
+    const hit = { int: top.includes(j.r[0]), apt: j.a.some(x => apt.includes(x)), val: j.v.some(x => val.includes(x)) };
+    return { ...j, hit, n: hit.int + hit.apt + hit.val };
+  }).filter(j => j.n >= 2).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'ko'));
+}
+
+/* ---------- 그리기 ---------- */
+function update() {
+  const s = readScores(), top = topTwo(s);
+  RIASEC.forEach(([k]) => $('bar' + k).style.width = (s[k] ?? 0) + '%');
+  drawRadar(s, top);
+  $('profTitle').textContent = ($('fName').value.trim() ? $('fName').value.trim() + ' 학생의 ' : '') + '종합 프로필';
+  const lens = (cls, title, items, empty) => `<div class="lens ${cls}"><h3>${title}</h3>${items.length ? `<p>${items.map(esc).join(' · ')}</p>` : `<p class="empty">${empty}</p>`}</div>`;
+  $('lenses').innerHTML = lens('int', '흥미 상위 2유형', top.map(nameOf), '여섯 유형 점수를 모두 넣으면 보여요.')
+    + lens('apt', '적성 강점', apt, '왼쪽에서 강점 영역을 골라 주세요.')
+    + lens('val', '중요한 가치', val, '왼쪽에서 가치 항목을 골라 주세요.');
+  const m = (top.length || apt.length || val.length) ? match(top) : [];
+  drawVenn(m, top);
+  $('cands').innerHTML = !m.length
+    ? `<p class="empty-state">${top.length + apt.length + val.length ? '두 렌즈 이상 겹치는 직업이 아직 없어요. 고른 항목을 바꿔 보거나 매핑표에 직업을 더해 보세요.' : '흥미 점수와 적성·가치관을 고르면 겹치는 후보가 여기에 나타나요.'}</p>`
+    : m.map(j => `<div class="cand${j.n === 3 ? ' core' : ''}"><strong>${esc(j.name)}</strong>
+        ${j.hit.int ? '<span class="pill int">흥미</span>' : ''}${j.hit.apt ? '<span class="pill apt">적성</span>' : ''}${j.hit.val ? '<span class="pill val">가치관</span>' : ''}</div>`).join('');
+  $('jobList').innerHTML = (m.length ? m : JOBS).map(j => `<option value="${esc(j.name)}">`).join('');
+  update.m = m; update.top = top;
+  $('summary').textContent = summary(s, top, m);
+}
+
+function drawRadar(s, top) {
+  const C = 130, R = 92, pt = (i, r) => [C + r * Math.sin(i * Math.PI / 3), C - r * Math.cos(i * Math.PI / 3)];
+  let g = '';
+  [.25, .5, .75, 1].forEach(f => g += `<polygon points="${RIASEC.map((_, i) => pt(i, R * f).join(',')).join(' ')}" fill="none" stroke="#e1e4e0"/>`);
+  RIASEC.forEach(([k, n], i) => { const [x, y] = pt(i, R), [lx, ly] = pt(i, R + 22);
+    g += `<line x1="${C}" y1="${C}" x2="${x}" y2="${y}" stroke="#e1e4e0"/><text x="${lx}" y="${ly + 4}" text-anchor="middle"${top.includes(k) ? ' font-weight="800" fill="#3a74b8"' : ''}>${n}</text>`; });
+  g += `<polygon class="poly" points="${RIASEC.map(([k], i) => pt(i, R * (s[k] ?? 0) / 100).join(',')).join(' ')}"/>`;
+  $('radar').innerHTML = `<svg viewBox="0 0 260 260" role="img" aria-label="흥미 6유형 육각형 그래프">${g}</svg>`;
+  $('code').innerHTML = top.length ? `흥미 코드 <b>${top.join('')}</b>` : '점수 6개를 모두 넣으면 흥미 코드가 나와요.';
+}
+
+function drawVenn(m, top) {
+  // 세 원: 흥미(왼쪽 위) 적성(오른쪽 위) 가치관(아래). 영역마다 직업 이름 2개 + '외 n개'. 전체는 오른쪽 목록.
+  const Z = { core: [200, 165], ia: [200, 70], iv: [112, 222], av: [288, 222] };
+  const zone = j => j.n === 3 ? 'core' : j.hit.int && j.hit.apt ? 'ia' : j.hit.int ? 'iv' : 'av';
+  const by = { core: [], ia: [], iv: [], av: [] }; m.forEach(j => by[zone(j)].push(j.name));
+  let t = '';
+  for (const [z, names] of Object.entries(by)) {
+    const shown = names.slice(0, 2).concat(names.length > 2 ? [`외 ${names.length - 2}개`] : []);
+    const [x, y] = Z[z], y0 = y - (shown.length - 1) * 10;
+    shown.forEach((n, i) => t += `<text class="job${z === 'core' ? ' core' : ''}" x="${x}" y="${y0 + i * 20}" text-anchor="middle">${esc(n)}</text>`);
+  }
+  const op = on => on ? 1 : .35;
+  $('venn').innerHTML = `<svg viewBox="0 0 400 340" role="img" aria-label="흥미·적성·가치관 겹침 다이어그램. 오른쪽 목록과 같은 내용">
+    <circle cx="150" cy="130" r="112" fill="#e3edf8" opacity="${op(top.length)}"/>
+    <circle cx="250" cy="130" r="112" fill="#e0f1e9" opacity="${op(apt.length)}"/>
+    <circle cx="200" cy="215" r="112" fill="#f6ecdc" opacity="${op(val.length)}"/>
+    <text class="lab" x="62" y="40" fill="#3a74b8">흥미</text><text class="lab" x="338" y="40" fill="#2f8f6b" text-anchor="end">적성</text>
+    <text class="lab" x="200" y="334" fill="#b7791f" text-anchor="middle">가치관</text>${t}</svg>`;
+}
+
+function summary(s, top, m) {
+  const d = new Date(), date = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+  const v = id => $(id).value.trim() || '-';
+  return `[진로 상담 요약] ${v('fName')} (${v('fClass')}) · ${date}
+흥미: ${top.length ? top.map(nameOf).join('·') + ` (코드 ${top.join('')})` : '-'}
+적성 강점: ${apt.join(', ') || '-'}
+중요한 가치: ${val.join(', ') || '-'}
+세 렌즈가 겹치는 확인할 후보(추천 아님): ${m.filter(j => j.n === 3).map(j => j.name).join(', ') || '없음'}
+두 렌즈가 겹치는 후보: ${m.filter(j => j.n === 2).map(j => j.name).join(', ') || '없음'}
+
+우선 경로: ${v('pJob')} / ${v('pSchool')}
+  이번 학기: ${v('pTodo')}
+대안 경로: ${v('aJob')} / ${v('aSchool')}
+  이번 학기: ${v('aTodo')}
+메모: ${v('notes')}`;
+}
+
+/* ---------- 질문 카드 ---------- */
+$('drawBtn').onclick = () => {
+  const pool = QUESTIONS.filter(q => q[1] !== lastQ);
+  const [cat, q] = pool[Math.floor(Math.random() * pool.length)];
+  lastQ = q;
+  const fill = q.replace('{흥미}', update.top?.length ? nameOf(update.top[0]) : '좋아하는')
+    .replace('{적성}', apt[0] || '잘하는 일').replace('{가치}', val[0] || '가장 중요한 가치')
+    .replace('{후보}', $('pJob').value.trim() || update.m?.[0]?.name || '관심 직업');
+  const card = $('qcard'); card.classList.add('flip');
+  setTimeout(() => { $('qface').innerHTML = `<span><small>${esc(cat)}</small>${esc(fill)}</span>`; card.classList.remove('flip'); },
+    matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180);
+  card.dataset.q = fill;
+};
+$('keepBtn').onclick = () => {
+  const q = $('qcard').dataset.q; if (!q) return status('먼저 질문 카드를 뽑아 주세요.');
+  $('notes').value = ($('notes').value ? $('notes').value + '\n' : '') + 'Q. ' + q + '\n- ';
+  update(); $('notes').focus(); status('질문을 상담 메모에 담았어요.');
+};
+
+/* ---------- 채우기·저장·지우기 ---------- */
+function collect() {
+  const r = { s: readScores(), apt: [...apt], val: [...val] };
+  FIELDS.forEach((f, i) => r[KEYS[i]] = $(f).value);
+  return r;
+}
+function fill(r) {
+  FIELDS.forEach((f, i) => $(f).value = r[KEYS[i]] || '');
+  RIASEC.forEach(([k]) => $('s' + k).value = r.s?.[k] ?? '');
+  apt = [...(r.apt || [])]; val = [...(r.val || [])];
+  drawChips(); update();
+}
+const loadStore = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; } };
+function drawSaved() {
+  const st = loadStore(), names = Object.keys(st);
+  $('savedSel').hidden = !names.length;
+  $('savedSel').innerHTML = `<option value="">저장된 기록 ${names.length}개</option>` + names.map(n => `<option>${esc(n)}</option>`).join('');
+}
+$('demoBtn').onclick = () => { fill(DEMO); status('데모 학생(가명)으로 채웠어요. 저장은 되지 않아요.'); };
+$('newBtn').onclick = () => { fill({}); $('qface').innerHTML = '<span>카드를 뽑으면 질문이 나와요.</span>'; delete $('qcard').dataset.q; status('새 상담을 시작해요. 아무것도 저장되지 않은 상태예요.'); $('fName').focus(); };
+$('saveBtn').onclick = () => {
+  const r = collect();
+  if (!r.name.trim() && !apt.length && !val.length && !Object.values(r.s).some(v => v !== null)) return status('저장할 내용이 없어요. 먼저 결과를 입력해 주세요.');
+  const key = (r.name.trim() || '이름 없음') + (r.cls.trim() ? ` (${r.cls.trim()})` : '');
+  const st = loadStore(); st[key] = r;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(st)); status(`"${key}" 기록을 이 기기 브라우저에 저장했어요. 공용 PC라면 끝나고 꼭 지우세요.`); }
+  catch { status('이 브라우저에서는 저장할 수 없어요. 요약을 복사해 두세요.'); }
+  drawSaved();
+};
+$('savedSel').onchange = e => { const r = loadStore()[e.target.value]; if (r) { fill(r); status(`"${e.target.value}" 기록을 불러왔어요.`); } e.target.value = ''; };
+$('wipeBtn').onclick = () => {
+  if (!confirm('이 기기에 저장된 상담 기록을 모두 지우고 화면도 비울까요? 되돌릴 수 없어요.')) return;
+  localStorage.removeItem(STORE_KEY); fill({}); drawSaved(); status('이 기기에 저장된 상담 기록을 모두 지웠어요.');
+};
+$('copyBtn').onclick = async () => {
+  try { await navigator.clipboard.writeText($('summary').textContent); status('요약을 복사했어요.'); }
+  catch { status('복사가 막혀 있어요. 요약 글을 직접 선택해 복사해 주세요.'); }
+};
+
+drawChips(); drawSaved(); update();
+</script>
+</body>
+</html>

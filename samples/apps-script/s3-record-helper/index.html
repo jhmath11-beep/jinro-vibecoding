@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진로활동 초안 도우미</title>
+<!--
+  [상·업무] 생기부 진로활동 초안 도우미 — 학교생활기록부 작성 업무 / 시작 프롬프트 + 다듬기 3회 수준
+  앱스스크립트에서는 Code.gs 의 getInit · saveDraft · polish 를 부르고,
+  google.script.run 이 없는 곳에서는 가명 예시 데이터로 도는 "미리보기 모드"가 된다(AI 는 가짜 응답, 외부 호출 없음).
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --primary:#14b8a6; --primary-strong:#0d9488; --primary-soft:#ccfbf1; --primary-ink:#115e59;
+  --accent:#b45309; --accent-soft:#fdf0dc;
+  --bg:#f6f3ed; --surface:#fffdf9; --paper:#ffffff; --border:#e7e1d6; --text:#1c1917; --text-muted:#625b52; --text-subtle:#9b9389;
+  --success:#22c55e; --warning:#f59e0b; --warning-soft:#fef3c7; --danger:#ef4444; --danger-soft:#fee2e2;
+  --fs-xs:.75rem; --fs-sm:.875rem; --fs-base:1rem; --fs-lg:1.125rem; --fs-xl:1.5rem; --fs-2xl:2rem; --fs-3xl:3rem;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px; --sp-12:48px; --sp-16:64px;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-full:999px;
+  --shadow-sm:0 1px 2px rgba(28,25,23,.04),0 1px 3px rgba(28,25,23,.06);
+  --shadow-md:0 6px 20px rgba(28,25,23,.08);
+  --container:1280px; --ease:cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing:border-box }
+body { margin:0; font-family:Pretendard,-apple-system,"Segoe UI","Malgun Gothic",sans-serif; color:var(--text); background:var(--bg);
+  font-size:var(--fs-base); line-height:1.6; -webkit-font-smoothing:antialiased; padding-bottom:150px }
+button, input, textarea { font:inherit; color:inherit }
+:focus-visible { outline:3px solid var(--primary-soft); outline-offset:2px; box-shadow:0 0 0 1px var(--primary-strong) }
+[hidden] { display:none !important }
+
+.preview { background:var(--accent-soft); color:#78350f; font-size:var(--fs-sm); padding:var(--sp-2) var(--sp-4); text-align:center }
+.wrap { max-width:var(--container); margin:0 auto; padding:var(--sp-6) var(--sp-4) }
+header.top { margin-bottom:var(--sp-6) }
+h1 { margin:0; font-size:var(--fs-2xl); font-weight:800; letter-spacing:-.02em; line-height:1.25 }
+.sub { margin:var(--sp-1) 0 0; color:var(--text-muted) }
+
+.layout { display:grid; gap:var(--sp-4) }
+@media (min-width:900px) { .layout { grid-template-columns:1fr 1.15fr } .students { grid-column:1/-1 } }
+@media (min-width:1180px) { .layout { grid-template-columns:220px 1fr 1.15fr; align-items:start } .students { grid-column:auto; position:sticky; top:var(--sp-4) } }
+.pane { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-sm); padding:var(--sp-4); min-width:0 }
+@media (min-width:600px) { .pane { padding:var(--sp-6) } }
+.pane-h { display:flex; flex-wrap:wrap; gap:var(--sp-2); align-items:center; justify-content:space-between; margin-bottom:var(--sp-4) }
+.pane-h h2 { margin:0; font-size:var(--fs-lg); line-height:1.3 }
+.pane-h small { color:var(--text-muted); font-size:var(--fs-sm); font-weight:500 }
+
+/* 학생 목록 */
+.students .search { width:100%; min-height:44px; border:1px solid var(--border); border-radius:var(--r-sm); padding:0 var(--sp-3); background:#fff; margin-bottom:var(--sp-3) }
+.slist { display:flex; gap:var(--sp-2); overflow-x:auto; padding-bottom:var(--sp-1) }
+@media (min-width:1180px) { .slist { flex-direction:column; overflow:visible } }
+.stu { flex:none; min-height:52px; min-width:132px; text-align:left; border:1px solid var(--border); background:#fff; border-radius:var(--r-md); padding:var(--sp-2) var(--sp-3); cursor:pointer;
+  display:grid; grid-template-columns:1fr auto; align-items:center; gap:0 var(--sp-2); transition:border-color .2s, background .2s }
+.stu b { line-height:1.3 } .stu span { font-size:var(--fs-xs); color:var(--text-muted); grid-column:1 }
+.stu em { grid-row:1 / span 2; grid-column:2; font-style:normal; font-size:var(--fs-xs); font-weight:700; border-radius:var(--r-full); padding:2px var(--sp-2); background:#f1ede5; color:var(--text-muted) }
+.stu em.saved { background:var(--primary-soft); color:var(--primary-ink) }
+.stu:hover { border-color:#d6cdbd }
+.stu[aria-current=true] { border-color:var(--primary-strong); background:#f0fdfa; box-shadow:inset 3px 0 0 var(--primary-strong) }
+
+/* 원 기록 */
+.recs { display:grid; gap:var(--sp-2) }
+.rec { display:grid; grid-template-columns:28px 1fr 28px; gap:var(--sp-3); align-items:start; padding:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md);
+  background:#fff; cursor:pointer; transition:background .2s, border-color .2s, box-shadow .2s }
+.rec input { width:22px; height:22px; margin:3px 0 0; accent-color:var(--primary-strong); cursor:pointer }
+.rec .meta { font-size:var(--fs-sm); color:var(--text-muted) } .rec .meta b { color:var(--text) }
+.rec p { margin:var(--sp-1) 0 0; overflow-wrap:anywhere }
+.mk { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-size:var(--fs-sm); font-weight:800; background:var(--accent-soft); color:var(--accent); font-variant-numeric:tabular-nums }
+.rec.lit, .blk.lit { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft) }
+.rec:has(input:not(:checked)) { opacity:.6 }
+
+/* 초안 블록 */
+.blocks { display:grid; gap:var(--sp-2); counter-reset:b }
+.blk { display:grid; grid-template-columns:28px 1fr; gap:var(--sp-2) var(--sp-3); padding:var(--sp-3); border:1px solid var(--border); border-radius:var(--r-md); background:var(--paper);
+  transition:border-color .2s, box-shadow .2s; animation:enter .3s var(--ease) both }
+@keyframes enter { from { opacity:0; transform:translateY(6px) } }
+.blk .mk.ai { background:#ede9fe; color:#6d28d9 }
+.blk textarea { width:100%; border:0; resize:none; padding:2px 0; background:transparent; line-height:1.7; min-height:28px; overflow:hidden }
+.blk textarea:focus { outline:none }
+.blk .tools { grid-column:2; display:flex; flex-wrap:wrap; gap:var(--sp-1); align-items:center }
+.tb { min-width:44px; min-height:36px; border:1px solid var(--border); background:#fff; border-radius:var(--r-sm); cursor:pointer; color:var(--text-muted); font-size:var(--fs-sm) }
+.tb:hover { background:#f6f3ed; color:var(--text) }
+.warn { font-size:var(--fs-sm); color:#92400e; background:var(--warning-soft); border-radius:var(--r-sm); padding:2px var(--sp-2) }
+.warn.bad { color:#991b1b; background:var(--danger-soft) }
+.empty { text-align:center; padding:var(--sp-8) var(--sp-4); color:var(--text-muted); border:1px dashed var(--border); border-radius:var(--r-md) }
+.empty strong { display:block; color:var(--text) }
+.bar { display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-top:var(--sp-4); align-items:center }
+.saved-at { font-size:var(--fs-sm); color:var(--text-muted) }
+
+.btn { min-height:44px; padding:0 var(--sp-4); border:0; border-radius:var(--r-md); background:var(--primary-strong); color:#fff; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--sp-2); transition:background .15s, transform .15s }
+.btn:hover:not(:disabled) { background:var(--primary-ink) } .btn:active { transform:translateY(1px) }
+.btn:disabled { opacity:.5; cursor:not-allowed }
+.btn--ghost { background:#fff; color:var(--text); box-shadow:inset 0 0 0 1px var(--border) } .btn--ghost:hover:not(:disabled) { background:#f6f3ed }
+.btn--ai { background:#fff; color:#6d28d9; box-shadow:inset 0 0 0 1px #ddd6fe } .btn--ai:hover:not(:disabled) { background:#f5f3ff }
+.btn svg { width:18px; height:18px }
+.spin { width:16px; height:16px; border-radius:50%; border:2px solid rgba(0,0,0,.15); border-top-color:currentColor; animation:rot .7s linear infinite }
+@keyframes rot { to { transform:rotate(1turn) } }
+.ai-off { font-size:var(--fs-sm); color:var(--text-muted); width:100% }
+
+/* 시그니처: 아래 고정 게이지 */
+.dock { position:fixed; left:0; right:0; bottom:0; background:rgba(255,253,249,.96); backdrop-filter:blur(6px); border-top:1px solid var(--border); z-index:5 }
+.dock .in { max-width:var(--container); margin:0 auto; padding:var(--sp-3) var(--sp-4) }
+.gauge-row { display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4); align-items:baseline; font-variant-numeric:tabular-nums; font-size:var(--fs-sm); color:var(--text-muted) }
+.gauge-row b { font-size:var(--fs-lg); color:var(--text) }
+.gauge-row .st { margin-left:auto; font-weight:700 }
+.st.ok { color:var(--primary-ink) } .st.near { color:#92400e } .st.over { color:#b91c1c }
+.gauge { position:relative; height:12px; border-radius:var(--r-full); background:#ece6db; margin:var(--sp-2) 0; overflow:visible }
+.gauge .fill { position:absolute; inset:0 auto 0 0; border-radius:inherit; background:var(--primary-strong); width:0; transition:width .3s var(--ease), background .3s }
+.gauge .fill.near { background:var(--warning) } .gauge .fill.over { background:var(--danger) }
+.gauge .tick { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--text); border-radius:2px }
+.gauge .tick::after { content:attr(data-l); position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:var(--fs-xs); color:var(--text-muted); white-space:nowrap }
+.notice { font-size:var(--fs-sm); color:var(--text-muted); line-height:1.4 }
+.notice b { color:var(--accent) }
+.notice .short { display:none }
+@media (max-width:599px) { .notice .long { display:none } .notice .short { display:inline } .gauge .tick::after { display:none } .dock .in { padding:var(--sp-2) var(--sp-4) } }
+
+dialog { border:0; padding:0; border-radius:var(--r-lg); width:min(760px, calc(100vw - 24px)); box-shadow:0 20px 50px rgba(28,25,23,.2); color:var(--text) }
+dialog::backdrop { background:rgba(28,25,23,.45) }
+dialog[open] { animation:enter .3s var(--ease) }
+.dlg { padding:var(--sp-6) }
+.dlg h2 { margin:0 0 var(--sp-2); font-size:var(--fs-xl) }
+.dlg p { margin:0 0 var(--sp-3); color:var(--text-muted) }
+.sent { background:#f6f3ed; border-radius:var(--r-md); padding:var(--sp-4); white-space:pre-wrap; max-height:220px; overflow:auto; font-size:var(--fs-sm); overflow-wrap:anywhere }
+.check { display:flex; gap:var(--sp-2); align-items:flex-start; margin:var(--sp-4) 0; min-height:44px; cursor:pointer }
+.check input { width:22px; height:22px; flex:none; margin-top:2px; accent-color:var(--primary-strong) }
+.cmp { display:grid; gap:var(--sp-3) } @media (min-width:700px) { .cmp { grid-template-columns:1fr 1fr } }
+.cmp h3 { margin:0 0 var(--sp-1); font-size:var(--fs-sm); color:var(--text-muted) }
+.cmp div div { border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3); white-space:pre-wrap; font-size:var(--fs-sm); max-height:260px; overflow:auto; overflow-wrap:anywhere }
+.cmp .new div { border-color:#ddd6fe; background:#faf8ff }
+.fake { display:inline-block; font-size:var(--fs-xs); font-weight:700; color:#6d28d9; background:#ede9fe; border-radius:var(--r-full); padding:2px var(--sp-2); margin-left:var(--sp-2); vertical-align:middle }
+.actions { display:flex; flex-wrap:wrap; gap:var(--sp-2); justify-content:flex-end; margin-top:var(--sp-4) }
+.toast { width:max-content; max-width:calc(100vw - 32px); position:fixed; left:50%; bottom:170px; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:var(--text); color:#fff; padding:var(--sp-3) var(--sp-4);
+  border-radius:var(--r-md); max-width:calc(100vw - 32px); transition:opacity .25s, transform .25s var(--ease); z-index:9 }
+.toast.show { opacity:1; transform:translate(-50%,0) } .toast.bad { background:#991b1b }
+.state { text-align:center; padding:var(--sp-12) var(--sp-4); color:var(--text-muted) } .state strong { display:block; color:var(--text); font-size:var(--fs-lg) }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important } }
+</style>
+</head>
+<body>
+<div class="preview" id="preview" hidden><b>미리보기 모드 · 예시 데이터</b> — 학생은 모두 가명이고, AI 다듬기는 가짜 응답이에요(외부로 아무것도 보내지 않아요).</div>
+<div class="wrap">
+  <header class="top">
+    <h1>진로활동 초안 도우미</h1>
+    <p class="sub">쌓아 둔 관찰 기록을 학생별로 모아 진로활동 특기사항 <b>초안</b>을 만들어요. 기록과 초안을 나란히 보며 고치세요.</p>
+  </header>
+
+  <div id="loading" class="state"><strong>기록을 불러오는 중…</strong></div>
+  <div class="layout" id="app" hidden>
+    <aside class="pane students" aria-label="학생 목록">
+      <input class="search" id="q" type="search" placeholder="이름·학번 찾기" aria-label="학생 찾기">
+      <div class="slist" id="slist"></div>
+    </aside>
+
+    <section class="pane" aria-labelledby="recTitle">
+      <div class="pane-h"><h2 id="recTitle">관찰 기록 <small>원문 · 초안에 넣을 것만 체크</small></h2></div>
+      <div class="recs" id="recs"></div>
+    </section>
+
+    <section class="pane" aria-labelledby="draftTitle">
+      <div class="pane-h">
+        <h2 id="draftTitle">초안 <small id="draftWho"></small></h2>
+        <button class="btn" id="build" type="button">기록으로 초안 만들기</button>
+      </div>
+      <div class="blocks" id="blocks"></div>
+      <div class="bar">
+        <button class="btn btn--ai" id="ai" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>AI로 다듬기 (선택)</button>
+        <button class="btn btn--ghost" id="copy" type="button">복사</button>
+        <button class="btn btn--ghost" id="save" type="button">시트에 저장</button>
+        <span class="saved-at" id="savedAt"></span>
+        <span class="ai-off" id="aiOff" hidden>AI 다듬기는 꺼져 있어요. 켜려면 Code.gs 머리 주석의 스크립트 속성 안내를 보세요.</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="dock" role="region" aria-label="분량 확인">
+  <div class="in">
+    <div class="gauge-row"><span><b id="gChars">0</b> / <span id="gCharMax">700</span>자</span><span><b id="gBytes">0</b> / <span id="gByteMax">2100</span>바이트</span><span class="st ok" id="gState" aria-live="polite">비어 있어요</span></div>
+    <div class="gauge" aria-hidden="true"><div class="fill" id="gFill"></div><span class="tick" style="left:90%" data-l="90%"></span></div>
+    <div class="notice"><b>초안일 뿐이에요.</b> <span class="short">기재요령 확인 · 교사 최종 검토 후 NEIS 직접 입력 · AI는 교육청·학교 지침 확인</span><span class="long">학교생활기록부 기재요령(분량·바이트 기준, 금지 표현)을 확인하고 교사가 최종 검토한 뒤 NEIS에 직접 입력하세요. 생성형 AI를 쓰려면 교육청·학교 지침을 먼저 확인하세요.</span></div>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg">
+    <div id="step1">
+      <h2 id="dlgTitle">AI로 보낼 내용 확인</h2>
+      <p>이름·학번·반·번호를 코드로 지운 초안만 보내요. 관찰 기록 원문은 보내지 않아요.</p>
+      <div class="sent" id="sent"></div>
+      <label class="check"><input type="checkbox" id="agree"> 교육청·학교의 생성형 AI 활용 지침을 확인했고, 결과는 제가 다시 검토할게요.</label>
+      <div class="actions"><button class="btn btn--ghost" type="button" data-close>취소</button><button class="btn" id="send" type="button" disabled>보내기</button></div>
+    </div>
+    <div id="step2" hidden>
+      <h2>다듬은 문장 비교 <span class="fake" id="fakeTag" hidden>미리보기 가짜 응답</span></h2>
+      <p>AI는 기록에 없는 사실을 추가하지 않도록 지시받았지만, 반드시 원 기록과 대조해 주세요. "학생"은 지운 이름 자리예요.</p>
+      <div class="cmp"><div><h3>지금 초안</h3><div id="cmpOld"></div></div><div class="new"><h3>AI 제안</h3><div id="cmpNew"></div></div></div>
+      <div class="actions"><button class="btn btn--ghost" type="button" data-close>버리기</button><button class="btn" id="apply" type="button">제안으로 바꾸기</button></div>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const PREVIEW = typeof google === 'undefined' || !google.script;
+const $ = s => document.querySelector(s);
+function run(fn, ...args) {
+  return new Promise((ok, fail) => {
+    if (PREVIEW) return setTimeout(() => { try { ok(JSON.parse(JSON.stringify(DEMO[fn](...args)))); } catch (e) { fail(e); } }, 450);
+    google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[fn](...args);
+  });
+}
+const msg = e => String((e && e.message) || e).replace(/^(Exception|Error):\s*/, '');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function toast(t, bad) { const el = $('#toast'); el.textContent = t; el.classList.toggle('bad', !!bad); el.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove('show'), 3000); }
+
+/* ── Code.gs 와 같은 순수 함수 ── */
+function countBytes(text, cfg) { let b = 0; for (const ch of String(text)) { if (ch === '\r') continue; b += ch === '\n' ? cfg.newlineBytes : ch.charCodeAt(0) > 127 ? cfg.hangulBytes : cfg.otherBytes; } return b; }
+function anonymize(text, name, id) {
+  let t = String(text); name = String(name || '').trim();
+  if (name) { t = t.split(name).join('학생'); if (name.length >= 3) t = t.split(name.slice(1)).join('학생'); }
+  if (id) t = t.split(String(id)).join('');
+  return t.replace(/\d+\s*학년\s*\d+\s*반(\s*\d+\s*번)?/g, '').replace(/\d+\s*반\s*\d+\s*번/g, '').replace(/\d+\s*반(?![가-힣])/g, '').replace(/\d+\s*번(?=\s*(이|가|은|는|의|을|를|학생|\)|,|$))/g, '')
+    .replace(/\b\d{4,6}\b(?!\s*(년|월|일|회|명|개|시|분|번째))/g, '').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+/* ── 미리보기용 가짜 서버 ── */
+const DEMO = (() => {
+  const S = [
+    ['20301','김하윤',[
+      ['2026-03-18','진로 흥미 탐색','흥미검사 결과에서 사회형과 예술형이 함께 높게 나온 까닭을 하윤 스스로 자신의 경험과 연결해 분석하고 모둠에 발표함.'],
+      ['2026-05-07','직업인 인터뷰','미술치료사에게 할 질문 6개를 스스로 만들고, 답변에서 관찰력과 공감을 핵심 역량으로 정리함.'],
+      ['2026-07-02','진로 독서','진로 관련 도서를 읽고 미술과 심리를 함께 쓰는 직업 3가지를 찾아 비교표로 정리함.'],
+      ['2026-09-15','학과 탐색','관심 학과의 교육과정을 조사하고 토익 목표 점수를 세움.']]],
+    ['20302','이서준',[
+      ['2026-04-02','진로 로드맵','드론 정비사를 1순위, 항공 정비사를 대안 경로로 정하고 고등학교 진학 경로를 비교함.'],
+      ['2026-06-11','직업 체험','진로 체험의 날 드론 조종사 부스에서 비행 전 점검표를 직접 작성해 봄'],
+      ['2026-10-01','모둠 프로젝트','안전 수칙 카드 뉴스를 만들며 자료 조사와 역할 분담을 이끎.']]],
+    ['20305','박지우',[
+      ['2026-03-25','진로 가치관','가치관 카드 활동에서 안정성과 사회봉사를 우선 가치로 고르고 그 이유를 글로 씀.'],
+      ['2026-05-20','직업인 특강','간호사 특강을 듣고 교대 근무와 협업에 대해 추가 질문을 함.']]],
+    ['20311','최도윤',[]]
+  ];
+  const drafts = {};
+  return {
+    getInit() { return { config:{ limitChars:700, limitBytes:2100, hangulBytes:3, otherBytes:1, newlineBytes:2 },
+      banned:['토익','토플','TOEIC','TOEFL','교외','논문','특허','출간','어학연수','부모님 직업'], aiEnabled:true,
+      students: S.map(([id, name, r]) => ({ id, name, records: r.map(([date, activity, note]) => ({ date, activity, note })), draft: drafts[id] || null })) }; },
+    saveDraft(id, text) { if (String(text).length > 5000) throw new Error('초안이 너무 길어요.'); const d = new Date();
+      const saved = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; drafts[id] = { text, saved }; return { saved }; },
+    polish(id, text) { // 가짜 응답: 외부 호출 없음. 첫 "~함. " 을 "~하고, " 로 잇는 정도만 흉내
+      const s = S.find(x => x[0] === id); const sent = anonymize(text, s[1], id);
+      return { sent, text: sent.replace(/(\S+)함\.\s/, '$1하고, ') };
+    }
+  };
+})();
+
+/* ── 상태 ── */
+let I = null, cur = null; const work = {};   // work[id] = { picks:[bool], blocks:[{src, text}] , saved }
+
+const ends = t => { const c = t.trim().replace(/[.]+$/, '').slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 === 16; }; // 받침 ㅁ(~함·~임·~음)
+function sentence(r) { // 규칙 조립: "활동에서 관찰 내용." (관찰 내용에 활동명이 이미 있으면 그대로)
+  let n = r.note.trim().replace(/\s+/g, ' ');
+  if (!n.includes(r.activity)) n = r.activity + (n.slice(0, 20).includes('에서') ? ' 활동 중 ' : ' 활동에서 ') + n; // "~에서 ~에서" 겹침 피하기
+  return /[.!?]$/.test(n) ? n : n + '.';
+}
+const text = () => (work[cur].blocks || []).map(b => b.text.trim()).filter(Boolean).join(' ');
+
+function pick(id) {
+  cur = id;
+  const s = I.students.find(x => x.id === id);
+  if (!work[id]) work[id] = { picks: s.records.map(() => true), blocks: s.draft ? [{ src: null, text: s.draft.text }] : [], saved: s.draft && s.draft.saved };
+  [...$('#slist').children].forEach(b => b.setAttribute('aria-current', b.dataset.id === id));
+  $('#draftWho').textContent = s.name + ' · ' + s.id;
+  $('#savedAt').textContent = work[id].saved ? work[id].saved + ' 저장됨' : '';
+  $('#recs').innerHTML = s.records.length ? s.records.map((r, i) => `<label class="rec" data-i="${i}">
+      <input type="checkbox" ${work[id].picks[i] ? 'checked' : ''} data-pick="${i}" aria-label="${i + 1}번 기록 초안에 넣기">
+      <div><div class="meta">${esc(r.date)} · <b>${esc(r.activity)}</b></div><p>${esc(r.note)}</p></div><span class="mk">${i + 1}</span></label>`).join('')
+    : '<div class="empty"><strong>이 학생의 관찰 기록이 아직 없어요</strong>"관찰기록" 시트에 날짜·학번·이름·활동·관찰 내용을 한 줄씩 쌓아 주세요.</div>';
+  $('#build').disabled = !s.records.length;
+  renderBlocks();
+}
+
+function renderBlocks() {
+  const w = work[cur], box = $('#blocks');
+  if (!w.blocks.length) {
+    box.innerHTML = '<div class="empty"><strong>아직 초안이 없어요</strong>왼쪽에서 넣을 기록을 체크하고 <b>기록으로 초안 만들기</b>를 누르세요.</div>';
+  } else {
+    box.innerHTML = w.blocks.map((b, i) => `<div class="blk" data-b="${i}" data-src="${b.src ?? ''}" style="animation-delay:${i * 50}ms">
+        <span class="mk ${b.src === 'ai' ? 'ai' : ''}" title="${b.src === 'ai' ? 'AI 제안' : b.src == null ? '저장된 초안' : (b.src + 1) + '번 기록에서'}">${b.src === 'ai' ? 'AI' : b.src == null ? '—' : b.src + 1}</span>
+        <textarea rows="1" aria-label="${i + 1}번째 문장">${esc(b.text)}</textarea>
+        <div class="tools"><button class="tb" data-act="up" aria-label="위로" type="button">↑</button><button class="tb" data-act="down" aria-label="아래로" type="button">↓</button><button class="tb" data-act="del" aria-label="문장 빼기" type="button">빼기</button><span class="warns"></span></div></div>`).join('');
+    box.querySelectorAll('textarea').forEach(fit);
+  }
+  check();
+}
+function fit(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+
+// 글자수·바이트·금지어·문장 끝 검사 (입력할 때마다)
+function check() {
+  const cfg = I.config, all = text();
+  const chars = all.length, bytes = countBytes(all, cfg);
+  $('#gChars').textContent = chars.toLocaleString(); $('#gBytes').textContent = bytes.toLocaleString();
+  const ratio = Math.max(chars / cfg.limitChars, bytes / cfg.limitBytes);
+  const st = $('#gState'), fill = $('#gFill');
+  fill.style.width = Math.min(100, ratio * 100) + '%';
+  const cls = ratio > 1 ? 'over' : ratio >= .9 ? 'near' : 'ok';
+  fill.className = 'fill ' + cls; st.className = 'st ' + cls;
+  st.textContent = !chars ? '비어 있어요' : ratio > 1 ? `한도 초과 · ${Math.max(chars - cfg.limitChars, 0) ? (chars - cfg.limitChars) + '자 ' : ''}${Math.max(bytes - cfg.limitBytes, 0) ? (bytes - cfg.limitBytes) + '바이트 ' : ''}줄여야 해요`
+    : ratio >= .9 ? '한도에 가까워요' : '여유 있어요';
+  document.querySelectorAll('.blk').forEach(el => {
+    const t = el.querySelector('textarea').value, found = I.banned.filter(b => t.toLowerCase().includes(b.toLowerCase()));
+    el.querySelector('.warns').innerHTML = found.map(f => `<span class="warn bad">"${esc(f)}" 기재 금지 예시</span>`).join(' ')
+      + (t.trim() && !ends(t) ? ' <span class="warn">끝을 "~함." 꼴로?</span>' : '');
+  });
+}
+
+function renderStudents() {
+  const q = $('#q').value.trim();
+  const list = I.students.filter(s => !q || s.name.includes(q) || s.id.includes(q));
+  $('#slist').innerHTML = list.length ? list.map(s => { const sv = (work[s.id] && work[s.id].saved) || (s.draft && s.draft.saved);
+    return `<button class="stu" type="button" data-id="${s.id}" aria-current="${s.id === cur}"><b>${esc(s.name)}</b><span>${s.id} · 기록 ${s.records.length}</span><em class="${sv ? 'saved' : ''}">${sv ? '저장' : '초안 전'}</em></button>`; }).join('')
+    : '<p class="saved-at">찾는 학생이 없어요.</p>';
+}
+
+/* ── 이벤트 ── */
+$('#slist').addEventListener('click', e => { const b = e.target.closest('.stu'); if (b) pick(b.dataset.id); });
+$('#q').addEventListener('input', renderStudents);
+$('#recs').addEventListener('change', e => { if (e.target.dataset.pick != null) work[cur].picks[+e.target.dataset.pick] = e.target.checked; });
+$('#build').onclick = () => {
+  const s = I.students.find(x => x.id === cur), w = work[cur];
+  if (w.blocks.length && !confirmOnce($('#build'), '지금 초안을 덮어써요 · 한 번 더')) return;
+  w.blocks = s.records.map((r, i) => ({ src: i, text: sentence(r) })).filter((b, i) => w.picks[i]);
+  if (!w.blocks.length) toast('넣을 기록을 하나 이상 체크해 주세요.', true);
+  renderBlocks();
+};
+function confirmOnce(btn, label) { // 실수 방지: 두 번 눌러야 실행
+  if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.label; return true; }
+  btn.dataset.label = btn.textContent; btn.dataset.armed = 1; btn.textContent = label;
+  setTimeout(() => { if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.label; } }, 3000);
+  return false;
+}
+$('#blocks').addEventListener('input', e => {
+  const blk = e.target.closest('.blk'); if (!blk) return;
+  work[cur].blocks[+blk.dataset.b].text = e.target.value; fit(e.target); check();
+});
+$('#blocks').addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const i = +t.closest('.blk').dataset.b, B = work[cur].blocks, j = t.dataset.act === 'up' ? i - 1 : i + 1;
+  if (t.dataset.act === 'del') B.splice(i, 1);
+  else if (j >= 0 && j < B.length) [B[i], B[j]] = [B[j], B[i]];
+  renderBlocks();
+});
+// 원 기록 ↔ 초안 문장 서로 비추기
+function light(src, on) {
+  if (src === '' || src == null) return;
+  document.querySelectorAll(`.rec[data-i="${src}"], .blk[data-src="${src}"]`).forEach(el => el.classList.toggle('lit', on));
+}
+['mouseover', 'focusin'].forEach(ev => document.addEventListener(ev, e => {
+  const el = e.target.closest('.blk, .rec'); document.querySelectorAll('.lit').forEach(x => x.classList.remove('lit'));
+  if (el) light(el.dataset.src ?? el.dataset.i, true);
+}));
+
+$('#copy').onclick = async () => {
+  const t = text(); if (!t) return toast('복사할 초안이 없어요.', true);
+  try { await navigator.clipboard.writeText(t); }
+  catch (_) { const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.position = 'fixed'; a.style.opacity = '0';
+    document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); if (!ok) return toast('복사가 막혔어요. 초안을 직접 드래그해 복사해 주세요.', true); }
+  toast('복사했어요. NEIS에 붙이기 전 기재요령을 다시 확인하세요.');
+};
+$('#save').onclick = async () => {
+  const b = $('#save'), t = text(); if (!t) return toast('저장할 초안이 없어요.', true);
+  b.disabled = true; b.innerHTML = '<span class="spin"></span>저장 중';
+  try { const r = await run('saveDraft', cur, t); work[cur].saved = r.saved; $('#savedAt').textContent = r.saved + ' 저장됨'; renderStudents(); toast('"초안" 시트에 저장했어요.'); }
+  catch (e) { toast(msg(e), true); } finally { b.disabled = false; b.textContent = '시트에 저장'; }
+};
+
+/* AI 다듬기: 보낼 내용 미리 보기 → 지침 확인 체크 → 비교 → 적용 */
+let aiOut = '';
+$('#ai').onclick = () => {
+  const t = text(); if (!t) return toast('먼저 초안을 만들어 주세요.', true);
+  const s = I.students.find(x => x.id === cur);
+  $('#sent').textContent = anonymize(t, s.name, s.id);
+  $('#agree').checked = false; $('#send').disabled = true; $('#step1').hidden = false; $('#step2').hidden = true;
+  $('#dlg').showModal();
+};
+$('#agree').onchange = e => $('#send').disabled = !e.target.checked;
+$('#send').onclick = async () => {
+  const b = $('#send'); b.disabled = true; b.innerHTML = '<span class="spin"></span>다듬는 중';
+  try {
+    const r = await run('polish', cur, text()); aiOut = r.text;
+    $('#cmpOld').textContent = r.sent; $('#cmpNew').textContent = r.text;
+    $('#fakeTag').hidden = !PREVIEW; $('#step1').hidden = true; $('#step2').hidden = false;
+  } catch (e) { toast(msg(e), true); $('#dlg').close(); }
+  finally { b.textContent = '보내기'; }
+};
+$('#apply').onclick = () => { work[cur].blocks = [{ src: 'ai', text: aiOut }]; $('#dlg').close(); renderBlocks(); toast('AI 제안으로 바꿨어요. 원 기록과 꼭 대조해 주세요.'); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $('#dlg').close());
+
+/* ── 시작 ── */
+(async () => {
+  if (PREVIEW) $('#preview').hidden = false;
+  try {
+    I = await run('getInit');
+    $('#gCharMax').textContent = I.config.limitChars.toLocaleString(); $('#gByteMax').textContent = I.config.limitBytes.toLocaleString();
+    $('#ai').disabled = !I.aiEnabled; $('#aiOff').hidden = I.aiEnabled;
+    $('#loading').hidden = true;
+    if (!I.students.length) { $('#loading').hidden = false; $('#loading').innerHTML = '<strong>관찰 기록이 아직 없어요</strong>"관찰기록" 시트에 날짜·학번·이름·활동·관찰 내용을 적은 뒤 새로고침하세요.'; return; }
+    $('#app').hidden = false; renderStudents(); pick(I.students[0].id);
+  } catch (e) { $('#loading').innerHTML = `<strong>기록을 불러오지 못했어요</strong>${esc(msg(e))}`; }
+})();
+</script>
+</body>
+</html>

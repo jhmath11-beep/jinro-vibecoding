@@ -1,0 +1,434 @@
+<!doctype html>
+<!--
+  과제: 20년 후 나의 명함 (하)
+  성취기준: [9진로03-04] 미래 직업 세계를 상상하고 자신의 진로를 설계한다 / [9진로01-02] 자신의 강점을 이해한다
+  이 샘플은 시작 프롬프트 + 다듬기 3회 수준 (1. 종이 질감·박 효과 2. 앞뒤 플립·템플릿 3. PNG 저장·아이폰 대비)
+  예시 이름·회사는 모두 가상입니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20년 후 나의 명함</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap">
+<style>
+:root {
+  --primary: #8a5a1f;          /* 가죽·잉크 브라운 */
+  --primary-strong: #6b4314;
+  --primary-soft: #f1e2c8;
+  --accent: #b8892f;           /* 금박 */
+
+  --bg: #ebe5da;               /* 책상 위 */
+  --surface: #fbf8f2;
+  --border: #ddd3c2;
+  --text: #2a241b;
+  --text-muted: #6a604f;
+  --text-subtle: #9a8f7c;
+
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+
+  --fs-xs: .75rem; --fs-sm: .875rem; --fs-base: 1rem; --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem; --fs-2xl: 2rem; --fs-3xl: 3rem;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+  --sp-6: 24px; --sp-8: 32px; --sp-12: 48px; --sp-16: 64px;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(60, 40, 10, .06), 0 1px 3px rgba(60, 40, 10, .08);
+  --shadow-md: 0 1px 1px rgba(0, 0, 0, .06), 0 12px 24px -8px rgba(60, 40, 10, .28), 0 32px 60px -24px rgba(60, 40, 10, .35);
+  --container: 1080px;
+  --serif: "Gowun Batang", serif;
+  --sans: Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.18 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; font-family: var(--sans); color: var(--text); font-size: var(--fs-base); line-height: 1.6;
+  background: var(--grain), radial-gradient(ellipse at 30% 0%, #f6f1e8, var(--bg) 70%);
+  -webkit-font-smoothing: antialiased; min-height: 100vh;
+}
+.wrap { max-width: var(--container); margin: 0 auto; padding: var(--sp-8) var(--sp-4) var(--sp-16); }
+header { margin-bottom: var(--sp-8); }
+h1 { font-family: var(--serif); font-size: clamp(1.9rem, 6vw, 2.75rem); line-height: 1.25; margin: 0 0 var(--sp-2); }
+header p { margin: 0; color: var(--text-muted); }
+h2 { font-size: var(--fs-lg); margin: 0 0 var(--sp-3); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.layout { display: grid; gap: var(--sp-8); }
+@media (min-width: 900px) {
+  .layout { grid-template-columns: 1.15fr 1fr; align-items: start; }
+  .stage { position: sticky; top: var(--sp-6); }
+}
+
+/* 명함 무대 */
+.stage { display: grid; gap: var(--sp-4); justify-items: center; }
+.note { color: var(--text-muted); font-size: var(--fs-base); text-align: center; margin: 0; min-height: 1.6em; }
+.card3d {
+  width: 100%; max-width: 560px; aspect-ratio: 5 / 3; perspective: 1400px;
+  border: 0; padding: 0; background: none; cursor: pointer; font: inherit;
+  container-type: inline-size; -webkit-tap-highlight-color: transparent; border-radius: 10px;
+}
+.flipper {
+  position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.3, .9, .3, 1.05);
+}
+.card3d.flipped .flipper { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0; border-radius: 1.6cqw; overflow: hidden;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--paper); color: var(--ink); box-shadow: var(--shadow-md);
+  text-align: left;
+}
+.face::after { /* 종이 결 */
+  content: ""; position: absolute; inset: 0; background: var(--grain); pointer-events: none;
+  opacity: var(--grain-o); mix-blend-mode: multiply;
+}
+.back { transform: rotateY(180deg); }
+.swap { animation: swap .28s ease both; }
+@keyframes swap { from { opacity: .3; transform: scale(.97); } }
+
+.foil {
+  background: linear-gradient(115deg, var(--foil)); background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  transition: background-position .8s ease;
+}
+.card3d:hover .foil, .foil.shine { background-position: 100% 0; }
+
+.logo {
+  position: absolute; left: 6cqw; top: 6cqw; width: 9cqw; height: 9cqw; border-radius: 50%;
+  background: linear-gradient(115deg, var(--foil)); background-size: 220% 100%;
+  color: var(--paper); display: grid; place-items: center;
+  font: 700 4.5cqw/1 var(--sans); transition: background-position .8s ease;
+}
+.card3d:hover .logo { background-position: 100% 0; }
+.company { position: absolute; left: 17.5cqw; top: 6cqw; height: 9cqw; display: flex; align-items: center; font: 600 3.2cqw/1.2 var(--sans); max-width: 55cqw; }
+.since { position: absolute; right: 6cqw; top: 6cqw; font: 600 2.2cqw/1 var(--sans); letter-spacing: .3em; color: var(--ink-soft); }
+.name { position: absolute; left: 6cqw; bottom: 13.5cqw; font: 700 7.5cqw/1.15 var(--name-font); white-space: nowrap; }
+.job { position: absolute; left: 6cqw; bottom: 6cqw; font: 500 3.6cqw/1.2 var(--sans); color: var(--ink-soft); }
+.bar { position: absolute; left: 0; top: 0; bottom: 0; width: 1.6cqw; background: linear-gradient(180deg, var(--foil)); display: var(--bar); }
+
+.motto { position: absolute; left: 10cqw; right: 10cqw; top: 13cqw; text-align: center; font: 700 5cqw/1.45 var(--serif); word-break: keep-all; overflow-wrap: anywhere; }
+.rule { position: absolute; left: 40cqw; right: 40cqw; top: 38cqw; height: .35cqw; background: linear-gradient(90deg, var(--foil)); }
+.strengths { position: absolute; left: 6cqw; right: 6cqw; top: 42cqw; text-align: center; font: 600 3.6cqw/1.3 var(--sans); }
+.strengths small { display: block; font-size: 2.2cqw; letter-spacing: .3em; color: var(--ink-soft); margin-bottom: 1.2cqw; }
+.ex { opacity: .62; }
+.stamp { animation: stamp .25s ease; }
+@keyframes stamp { 50% { transform: scale(1.04); } }
+
+.row { display: flex; flex-wrap: wrap; gap: var(--sp-3); justify-content: center; }
+.btn {
+  min-height: 48px; padding: 0 var(--sp-6); border: 0; border-radius: var(--r-full);
+  background: var(--primary); color: #fff; font: 700 var(--fs-base) var(--sans); cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.btn:hover { background: var(--primary-strong); }
+.btn:active { transform: scale(.97); }
+.btn--ghost { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.btn--ghost:hover { background: #fff; }
+
+/* 입력 */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-6); box-shadow: var(--shadow-sm); display: grid; gap: var(--sp-6); }
+.field { display: grid; gap: var(--sp-1); }
+.field label, .legend { font-weight: 700; }
+.field .hint { color: var(--text-muted); font-size: var(--fs-sm); }
+.input {
+  width: 100%; min-height: 48px; padding: 0 var(--sp-4); font: var(--fs-base) var(--sans); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-sm); background: #fff;
+}
+.input::placeholder { color: var(--text-subtle); }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--primary-soft); }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.chip {
+  min-height: 44px; padding: 0 var(--sp-4); border-radius: var(--r-full); border: 1px dashed var(--border);
+  background: transparent; font: var(--fs-base) var(--sans); color: var(--text-muted); cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.tpls { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }
+@media (min-width: 480px) { .tpls { grid-template-columns: repeat(4, 1fr); } }
+.tpl {
+  min-height: 72px; border-radius: var(--r-md); border: 2px solid transparent; cursor: pointer;
+  background: var(--paper); color: var(--ink); font: 700 var(--fs-base) var(--sans);
+  box-shadow: var(--shadow-sm); position: relative; overflow: hidden; transition: transform .15s, border-color .15s;
+  padding: 0 var(--sp-3) 0 40px; text-align: left; word-break: keep-all;
+}
+.tpl::before { content: ""; position: absolute; left: 12px; top: calc(50% - 9px); width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(115deg, var(--foil)); }
+.tpl[aria-pressed="true"] { border-color: var(--primary); transform: translateY(-2px); }
+
+dialog { border: 0; border-radius: var(--r-lg); padding: var(--sp-6); max-width: min(92vw, 640px); background: var(--surface); color: var(--text); }
+dialog::backdrop { background: rgba(30, 22, 10, .55); }
+dialog img { width: 100%; height: auto; display: block; border-radius: var(--r-sm); margin: var(--sp-4) 0; }
+dialog p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>20년 후 나의 명함</h1>
+    <p>2046년의 내가 건네줄 명함을 미리 만들어 봐요. 명함을 누르면 뒷면이 보여요.</p>
+  </header>
+
+  <div class="layout">
+    <section class="stage" aria-label="명함 미리보기">
+      <p class="note" id="note" aria-live="polite"></p>
+      <button class="card3d" id="card" type="button" aria-label="명함 뒤집기">
+        <div class="flipper" id="flipper">
+          <div class="face front">
+            <i class="bar"></i>
+            <span class="logo" data-out="logo"></span>
+            <span class="company" data-out="company"></span>
+            <span class="since">SINCE 2046</span>
+            <span class="name" data-out="name"></span>
+            <span class="job" data-out="job"></span>
+          </div>
+          <div class="face back">
+            <span class="motto" data-out="motto"></span>
+            <i class="rule"></i>
+            <span class="strengths"><small>MY STRENGTHS</small><span data-out="strengths"></span></span>
+          </div>
+        </div>
+      </button>
+      <div class="row">
+        <button class="btn btn--ghost" id="flipBtn" type="button">앞/뒤 뒤집기</button>
+        <button class="btn" id="saveBtn" type="button">PNG로 저장</button>
+      </div>
+    </section>
+
+    <form class="panel" id="form" autocomplete="off">
+      <div>
+        <h2 class="legend">템플릿</h2>
+        <div class="tpls" id="tpls"></div>
+      </div>
+      <div class="field">
+        <label for="f-name">이름</label>
+        <input class="input" id="f-name" name="name" maxlength="10" placeholder="한다온">
+      </div>
+      <div class="field">
+        <label for="f-job">20년 후 나의 직업</label>
+        <span class="hint">지금 없는 직업을 지어내도 좋아요.</span>
+        <input class="input" id="f-job" name="job" maxlength="16" placeholder="해양 생태 복원가">
+      </div>
+      <div class="field">
+        <label for="f-company">가상 회사·기관 이름</label>
+        <input class="input" id="f-company" name="company" maxlength="14" placeholder="푸른물결 연구소">
+      </div>
+      <div class="field">
+        <label for="f-motto">좌우명</label>
+        <input class="input" id="f-motto" name="motto" maxlength="30" placeholder="느려도 끝까지, 바다처럼 넓게">
+      </div>
+      <div class="field">
+        <span class="legend" id="s-label">나의 강점 3가지</span>
+        <div class="three" role="group" aria-labelledby="s-label">
+          <input class="input" name="s1" maxlength="8" placeholder="끈기" aria-label="강점 1">
+          <input class="input" name="s2" maxlength="8" placeholder="관찰력" aria-label="강점 2">
+          <input class="input" name="s3" maxlength="8" placeholder="공감" aria-label="강점 3">
+        </div>
+        <div class="chips" id="chips" aria-label="강점 예시. 누르면 빈칸에 들어가요"></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-t">
+  <p id="dlg-t"><b>명함 이미지가 만들어졌어요.</b></p>
+  <p>다운로드가 안 되면 아래 이미지를 길게 눌러(PC는 오른쪽 클릭) 저장하세요.</p>
+  <img id="dlgImg" alt="완성한 명함 앞면과 뒷면">
+  <div class="row"><button class="btn" id="dlgClose" type="button">닫기</button></div>
+</dialog>
+
+<script>
+// 템플릿: 이 값이 CSS 변수와 캔버스 그리기 양쪽의 원본
+const TPL = {
+  classic:  { label: "금박 크림", paper: "#f4eedf", ink: "#2c261d", soft: "#7a6d58", foil: ["#9c7a35", "#f2dc95", "#b48a3a", "#f6e6b0"], serif: true,  nameFoil: true,  bar: false, grain: .35 },
+  modern:   { label: "모던 화이트", paper: "#fafaf7", ink: "#15171a", soft: "#5d636b", foil: ["#0f766e", "#2dd4bf", "#0f766e", "#14b8a6"], serif: false, nameFoil: false, bar: true,  grain: .12 },
+  kraft:    { label: "크래프트",   paper: "#c9a77c", ink: "#2b1c0e", soft: "#55391c", foil: ["#3a2614", "#6b4a26", "#3a2614", "#5b3d1f"], serif: true,  nameFoil: false, bar: false, grain: .6 },
+  midnight: { label: "미드나잇",   paper: "#1d2442", ink: "#eef0f8", soft: "#aab1cc", foil: ["#8e96a8", "#f4f6fb", "#a3abbd", "#e6e9f0"], serif: false, nameFoil: true,  bar: false, grain: .25 },
+};
+const EX = { name: "한다온", job: "해양 생태 복원가", company: "푸른물결 연구소", motto: "느려도 끝까지, 바다처럼 넓게", s1: "끈기", s2: "관찰력", s3: "공감" };
+const CHIPS = ["호기심", "끈기", "공감", "꼼꼼함", "유머", "책임감", "관찰력", "창의력", "리더십", "성실함"];
+
+const $ = id => document.getElementById(id);
+const form = $("form"), card = $("card");
+const out = k => card.querySelector(`[data-out="${k}"]`);
+let tpl = "classic";
+
+$("tpls").innerHTML = Object.entries(TPL).map(([k, t]) =>
+  `<button type="button" class="tpl" data-tpl="${k}" aria-pressed="${k === tpl}">${t.label}</button>`).join("");
+$("tpls").querySelectorAll(".tpl").forEach(b => paint(b, TPL[b.dataset.tpl]));
+$("chips").innerHTML = CHIPS.map(c => `<button type="button" class="chip">+ ${c}</button>`).join("");
+
+function paint(el, t) {
+  el.style.setProperty("--paper", t.paper);
+  el.style.setProperty("--ink", t.ink);
+  el.style.setProperty("--ink-soft", t.soft);
+  el.style.setProperty("--foil", t.foil.map((c, i) => `${c} ${Math.round(i * 100 / (t.foil.length - 1))}%`).join(","));
+  el.style.setProperty("--name-font", t.serif ? "var(--serif)" : "var(--sans)");
+  el.style.setProperty("--grain-o", t.grain);
+  el.style.setProperty("--bar", t.bar ? "block" : "none");
+}
+
+// 빈 칸이면 예시 문구를 흐리게 보여 준다
+function values() {
+  const d = Object.fromEntries(new FormData(form));
+  const v = {}, ex = {};
+  for (const k in EX) { const s = (d[k] || "").trim(); v[k] = s || EX[k]; ex[k] = !s; }
+  return { v, ex };
+}
+
+function render(changed) {
+  const { v, ex } = values();
+  const t = TPL[tpl];
+  out("name").textContent = v.name;
+  out("job").textContent = v.job;
+  out("company").textContent = v.company;
+  out("logo").textContent = [...v.company][0];
+  out("motto").textContent = `“${v.motto}”`;
+  out("strengths").textContent = [v.s1, v.s2, v.s3].join("  ·  ");
+  out("name").classList.toggle("foil", t.nameFoil);
+  ["name", "job", "company", "motto"].forEach(k => out(k).classList.toggle("ex", ex[k]));
+  out("logo").classList.toggle("ex", ex.company);
+  out("strengths").classList.toggle("ex", ex.s1 && ex.s2 && ex.s3);
+  const n = Object.values(ex).filter(Boolean).length;
+  $("note").textContent = n ? `흐린 글씨는 예시예요. 빈칸 ${n}개를 채우면 바로 바뀌어요.` : "완성! 명함을 눌러 뒷면도 확인해 보세요.";
+  if (changed) {
+    const target = out(changed === "s1" || changed === "s2" || changed === "s3" ? "strengths" : changed);
+    if (target) { target.classList.remove("stamp"); void target.offsetWidth; target.classList.add("stamp"); }
+    // 입력하는 면이 앞인지 뒤인지에 따라 자동으로 돌려 보여 준다
+    const backSide = ["motto", "s1", "s2", "s3"].includes(changed);
+    card.classList.toggle("flipped", backSide);
+  }
+}
+
+form.addEventListener("input", e => render(e.target.name));
+form.addEventListener("submit", e => e.preventDefault());
+$("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  const word = b.textContent.replace("+", "").trim();
+  const inputs = ["s1", "s2", "s3"].map(n => form.elements[n]);
+  if (inputs.some(i => i.value.trim() === word)) return;
+  const empty = inputs.find(i => !i.value.trim());
+  if (!empty) { $("note").textContent = "강점 칸이 다 찼어요. 바꾸려면 칸 하나를 지워 주세요."; return; }
+  empty.value = word; render(empty.name);
+});
+$("tpls").addEventListener("click", e => {
+  const b = e.target.closest(".tpl"); if (!b) return;
+  tpl = b.dataset.tpl;
+  $("tpls").querySelectorAll(".tpl").forEach(x => x.setAttribute("aria-pressed", x === b));
+  paint(card, TPL[tpl]);
+  card.querySelectorAll(".face").forEach(f => { f.classList.remove("swap"); void f.offsetWidth; f.classList.add("swap"); });
+  render();
+});
+const flip = () => card.classList.toggle("flipped");
+card.addEventListener("click", flip);
+$("flipBtn").addEventListener("click", flip);
+
+paint(card, TPL[tpl]);
+render();
+
+/* ---------- PNG 저장: 앞면 + 뒷면을 캔바스에 다시 그린다 ---------- */
+const W = 1050, H = 630; // 화면 명함과 같은 5:3, 크기는 cqw 비율 그대로(1cqw = W/100)
+const u = x => x * W / 100;
+const SANS = "Pretendard, sans-serif", SERIF = "'Gowun Batang', serif";
+
+function grainLayer(alpha) {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"), img = g.createImageData(W, H);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = Math.random() * 255;
+    img.data[i] = 80; img.data[i + 1] = 64; img.data[i + 2] = 46; img.data[i + 3] = n * alpha * .35;
+  }
+  g.putImageData(img, 0, 0); return c;
+}
+function foilGrad(ctx, t, x0, y0, x1, y1) {
+  const g = ctx.createLinearGradient(x0, y0, x1, y1);
+  t.foil.forEach((c, i) => g.addColorStop(i / (t.foil.length - 1), c));
+  return g;
+}
+function wrap(ctx, text, maxW) {
+  const words = text.split(" "), lines = [];
+  let line = "";
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width <= maxW || !line) line = test; else { lines.push(line); line = w; }
+  }
+  lines.push(line);
+  // 띄어쓰기 없이 긴 줄은 글자 단위로 다시 자른다
+  return lines.flatMap(l => {
+    if (ctx.measureText(l).width <= maxW) return [l];
+    const out = []; let cur = "";
+    for (const ch of l) { if (ctx.measureText(cur + ch).width > maxW && cur) { out.push(cur); cur = ch; } else cur += ch; }
+    return [...out, cur];
+  });
+}
+function drawFace(ctx, ox, oy, side, v, t) {
+  ctx.save(); ctx.translate(ox, oy);
+  ctx.save();
+  ctx.shadowColor = "rgba(60,40,10,.35)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  ctx.fillStyle = t.paper; ctx.beginPath(); ctx.roundRect(0, 0, W, H, u(1.6)); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.roundRect(0, 0, W, H, u(1.6)); ctx.clip();
+  ctx.globalCompositeOperation = "multiply"; ctx.drawImage(grainLayer(t.grain), 0, 0); ctx.globalCompositeOperation = "source-over";
+  ctx.textBaseline = "alphabetic";
+  if (side === "front") {
+    if (t.bar) { ctx.fillStyle = foilGrad(ctx, t, 0, 0, 0, H); ctx.fillRect(0, 0, u(1.6), H); }
+    ctx.fillStyle = foilGrad(ctx, t, u(6), u(6), u(15), u(15));
+    ctx.beginPath(); ctx.arc(u(10.5), u(10.5), u(4.5), 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = t.paper; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = `700 ${u(4.5)}px ${SANS}`; ctx.fillText([...v.company][0], u(10.5), u(10.7));
+    ctx.textAlign = "left"; ctx.fillStyle = t.ink; ctx.font = `600 ${u(3.2)}px ${SANS}`; ctx.fillText(v.company, u(17.5), u(10.6));
+    ctx.textAlign = "right"; ctx.fillStyle = t.soft; ctx.font = `600 ${u(2.2)}px ${SANS}`;
+    ctx.letterSpacing = `${u(.66)}px`; ctx.fillText("SINCE 2046", W - u(6) + u(.66), u(6) + u(1.8)); ctx.letterSpacing = "0px";
+    ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+    ctx.font = `700 ${u(7.5)}px ${t.serif ? SERIF : SANS}`;
+    const nw = ctx.measureText(v.name).width;
+    ctx.fillStyle = t.nameFoil ? foilGrad(ctx, t, u(6), 0, u(6) + nw, 0) : t.ink;
+    ctx.fillText(v.name, u(6), H - u(13.5) - u(1.4));
+    ctx.fillStyle = t.soft; ctx.font = `500 ${u(3.6)}px ${SANS}`; ctx.fillText(v.job, u(6), H - u(6) - u(.7));
+  } else {
+    ctx.textAlign = "center"; ctx.fillStyle = t.ink; ctx.font = `700 ${u(5)}px ${SERIF}`;
+    const lines = wrap(ctx, `“${v.motto}”`, u(80));
+    lines.forEach((l, i) => ctx.fillText(l, W / 2, u(13) + u(5) * 1.1 + i * u(5) * 1.45));
+    ctx.fillStyle = foilGrad(ctx, t, u(40), 0, u(60), 0); ctx.fillRect(u(40), u(38), u(20), u(.35));
+    ctx.fillStyle = t.soft; ctx.font = `600 ${u(2.2)}px ${SANS}`; ctx.letterSpacing = `${u(.66)}px`;
+    ctx.fillText("MY STRENGTHS", W / 2 + u(.33), u(42) + u(2.2)); ctx.letterSpacing = "0px";
+    ctx.fillStyle = t.ink; ctx.font = `600 ${u(3.6)}px ${SANS}`;
+    ctx.fillText([v.s1, v.s2, v.s3].join("  ·  "), W / 2, u(42) + u(2.2) + u(1.2) + u(3.6));
+  }
+  ctx.restore(); ctx.restore();
+}
+
+$("saveBtn").addEventListener("click", async () => {
+  const btn = $("saveBtn");
+  btn.disabled = true; btn.textContent = "만드는 중…";
+  try {
+    // 글꼴이 다 내려온 뒤에 그려야 PNG에도 같은 글씨체가 들어간다
+    await Promise.all([`700 40px "Gowun Batang"`, `700 40px Pretendard`, `600 40px Pretendard`, `500 40px Pretendard`].map(f => document.fonts.load(f)));
+    await document.fonts.ready;
+    const { v } = values(), t = TPL[tpl], pad = 70;
+    const c = document.createElement("canvas");
+    c.width = W + pad * 2; c.height = H * 2 + pad * 3;
+    const ctx = c.getContext("2d");
+    if (!ctx.roundRect) ctx.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
+    ctx.fillStyle = "#ebe5da"; ctx.fillRect(0, 0, c.width, c.height);
+    drawFace(ctx, pad, pad, "front", v, t);
+    drawFace(ctx, pad, pad * 2 + H, "back", v, t);
+    const url = c.toDataURL("image/png");
+    $("dlgImg").src = url;
+    const a = document.createElement("a");
+    a.href = url; a.download = `20년후명함_${v.name}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    $("dlg").showModal();
+  } catch (err) {
+    $("note").textContent = "이미지를 만들지 못했어요. 화면 캡처로 저장해 주세요.";
+  } finally {
+    btn.disabled = false; btn.textContent = "PNG로 저장";
+  }
+});
+$("dlgClose").addEventListener("click", () => $("dlg").close());
+</script>
+</body>
+</html>
