@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>흥미 육각형 탐색</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600&family=Gowun+Batang:wght@700&display=swap">
+<style>
+  :root { --bg:#F3F6F5; --card:#fff; --ink:#1D2B2A; --muted:#5E6E6C; --line:#D7E0DE; --accent:#23756B; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans KR", sans-serif; padding:24px 16px 48px }
+  main { max-width:900px; margin:0 auto; display:grid; gap:18px }
+  h1 { font:700 1.8rem "Gowun Batang", serif; margin:0 }
+  .sub { color:var(--muted); margin:4px 0 0 }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap }
+  .tabs button { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 14px; font:inherit; cursor:pointer }
+  .tabs button[aria-pressed=true] { background:var(--ink); color:#fff }
+  .q { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line) }
+  .q:last-child { border:0 }
+  .scale { display:flex; gap:4px }
+  .scale label { display:grid; place-items:center; width:34px; height:34px; border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:.85rem }
+  .scale input { position:absolute; opacity:0 }
+  .scale input:checked + span { font-weight:700; color:#fff }
+  .scale label:has(input:checked) { background:var(--accent); border-color:var(--accent) }
+  .scale label:has(input:focus-visible) { outline:3px solid var(--ink) }
+  .legend { color:var(--muted); font-size:.85rem }
+  .score { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px }
+  .score label { display:grid; gap:4px; font-weight:600 }
+  .score input { padding:8px; border:1px solid var(--line); border-radius:8px; font:inherit }
+  .result { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; align-items:center }
+  svg text { font:600 13px "IBM Plex Sans KR", sans-serif; fill:var(--ink) }
+  .code { font:700 2.4rem "Gowun Batang", serif; color:var(--accent); margin:0 }
+  .caution { font-size:.85rem; color:var(--muted); border-top:1px solid var(--line); padding-top:10px }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>흥미 육각형 탐색</h1>
+    <p class="sub">[9진로01-02] 6가지 흥미 유형(현실·탐구·예술·사회·진취·관습)으로 나의 흥미를 살펴봅니다.</p>
+  </header>
+  <div class="tabs">
+    <button id="tab-quick" aria-pressed="true">간이 체크 30문항</button>
+    <button id="tab-score" aria-pressed="false">커리어넷 결과 점수 입력</button>
+  </div>
+  <section id="quick">
+    <p class="legend">1 = 전혀 아니다 · 3 = 보통 · 5 = 매우 그렇다</p>
+    <div id="qs"></div>
+  </section>
+  <section id="score" hidden>
+    <p class="legend">커리어넷 직업흥미검사 결과지에 있는 유형별 점수를 그대로 옮겨 적으세요.</p>
+    <div class="score" id="scoreInputs"></div>
+  </section>
+  <section class="result">
+    <svg id="radar" viewBox="-170 -150 340 300" role="img" aria-label="흥미 유형 육각형 그래프"></svg>
+    <div>
+      <p class="legend">나의 흥미 코드</p>
+      <p class="code" id="code">-</p>
+      <div id="desc"></div>
+    </div>
+    <p class="caution">이 간이 체크는 연수용으로 만든 문항이며 표준화된 심리검사가 아닙니다. 결과는 "나를 알아가는 대화의 출발점"으로만 쓰고, 정확한 결과는 커리어넷 등 공식 검사로 확인하세요.</p>
+  </section>
+</main>
+<script>
+const T = {
+  R:['현실형','몸이나 도구를 써서 직접 만들고 고치는 활동을 좋아해요.','정비사, 요리사, 드론 조종사, 농업인'],
+  I:['탐구형','궁금한 것을 관찰하고 분석해서 원리를 알아내는 걸 좋아해요.','연구원, 데이터 분석가, 의사, 개발자'],
+  A:['예술형','틀에 얽매이지 않고 생각과 느낌을 표현하는 걸 좋아해요.','디자이너, 작곡가, 웹툰 작가, 배우'],
+  S:['사회형','사람을 돕고 가르치고 함께하는 활동을 좋아해요.','교사, 간호사, 사회복지사, 상담사'],
+  E:['진취형','계획을 세워 사람들을 이끌고 목표를 이루는 걸 좋아해요.','창업가, 마케터, 변호사, 기자'],
+  C:['관습형','정해진 방식에 따라 정리하고 꼼꼼하게 처리하는 걸 좋아해요.','회계사, 사서, 공무원, 은행원'],
+};
+const KEYS = Object.keys(T);
+// ponytail: 연수용 자작 문항(유형별 5개). 표준화 검사 문항을 옮겨 쓰지 않는다.
+const ITEMS = {
+  R:['고장 난 물건을 직접 뜯어보고 고쳐 본다','만들기나 조립 활동이 즐겁다','몸을 움직이는 야외 활동이 좋다','공구나 기계를 다루는 게 재미있다','눈에 보이는 결과물이 나오는 일이 좋다'],
+  I:['"왜 그럴까?" 하고 원리를 찾아본다','과학 실험이나 탐구 활동이 재미있다','어려운 문제를 오래 붙잡고 푸는 편이다','뉴스나 자료를 보고 스스로 분석해 본다','새로운 사실을 알게 되면 신난다'],
+  A:['그림, 음악, 글 등으로 나를 표현한다','남과 다른 나만의 방식으로 하고 싶다','영화나 공연을 보면 오래 생각난다','꾸미거나 디자인하는 일이 즐겁다','상상한 것을 이야기로 만들어 본다'],
+  S:['친구의 고민을 들어 주는 일이 많다','모르는 친구에게 설명해 주는 게 좋다','봉사 활동에서 보람을 느낀다','모둠 활동에서 분위기를 챙긴다','다른 사람이 성장하는 걸 보면 기쁘다'],
+  E:['모둠에서 리더 역할을 맡는 편이다','친구들을 설득하는 게 자신 있다','물건을 팔거나 행사를 기획해 보고 싶다','목표를 세우고 경쟁하는 게 재미있다','새로운 일을 먼저 시작해 보는 편이다'],
+  C:['물건이나 파일을 정리해 두는 게 좋다','계획표를 세우고 그대로 지킨다','숫자나 기록을 꼼꼼히 확인한다','정해진 규칙과 절차가 있으면 편하다','실수 없이 정확하게 하는 게 중요하다'],
+};
+const ans = {};
+const qs = document.getElementById('qs');
+let n = 0;
+// 유형이 번갈아 나오도록 섞어서 배치
+for (let i = 0; i < 5; i++) KEYS.forEach(k => {
+  const id = `q${n++}`;
+  qs.insertAdjacentHTML('beforeend', `<div class="q"><span>${n}. ${ITEMS[k][i]}</span><div class="scale">${
+    [1,2,3,4,5].map(v => `<label><input type="radio" name="${id}" value="${v}" ${v===3?'checked':''}><span>${v}</span></label>`).join('')}</div></div>`);
+  ans[id] = { k, v: 3 };
+  qs.querySelectorAll(`input[name=${id}]`).forEach(r => r.onchange = () => { ans[id].v = +r.value; render(); });
+});
+const manual = { R:48, I:62, A:55, S:58, E:41, C:45 };
+document.getElementById('scoreInputs').innerHTML = KEYS.map(k =>
+  `<label for="s-${k}">${k} ${T[k][0]}<input id="s-${k}" type="number" min="0" max="100" value="${manual[k]}"></label>`).join('');
+KEYS.forEach(k => document.getElementById(`s-${k}`).oninput = e => { manual[k] = Math.min(100, Math.max(0, +e.target.value || 0)); render(); });
+
+let mode = 'quick';
+['quick','score'].forEach(m => document.getElementById(`tab-${m}`).onclick = () => {
+  mode = m;
+  document.getElementById('quick').hidden = m !== 'quick';
+  document.getElementById('score').hidden = m !== 'score';
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-pressed', b.id === `tab-${m}`));
+  render();
+});
+
+function scores() {
+  if (mode === 'score') return { ...manual };
+  const s = Object.fromEntries(KEYS.map(k => [k, 0]));
+  Object.values(ans).forEach(({ k, v }) => s[k] += v);
+  return Object.fromEntries(KEYS.map(k => [k, Math.round((s[k] - 5) / 20 * 100)])); // 5~25점 → 0~100
+}
+
+function render() {
+  const s = scores();
+  const max = Math.max(100, ...Object.values(s));
+  const pt = (i, r) => { const a = -Math.PI / 2 + i * Math.PI / 3; return [Math.cos(a) * r, Math.sin(a) * r]; };
+  let svg = '';
+  [0.25, 0.5, 0.75, 1].forEach(f => svg += `<polygon points="${KEYS.map((_, i) => pt(i, 110 * f)).join(' ')}" fill="none" stroke="#D7E0DE"/>`);
+  svg += `<polygon points="${KEYS.map((k, i) => pt(i, 110 * s[k] / max)).join(' ')}" fill="rgba(35,117,107,.25)" stroke="#23756B" stroke-width="2"/>`;
+  KEYS.forEach((k, i) => { const [x, y] = pt(i, 136); svg += `<text x="${x}" y="${y + 4}" text-anchor="middle">${k} ${T[k][0]} ${s[k]}</text>`; });
+  document.getElementById('radar').innerHTML = svg;
+  const top = [...KEYS].sort((a, b) => s[b] - s[a]);
+  document.getElementById('code').textContent = s[top[0]] === s[top[5]] ? '고르게 열려 있음' : top[0] + top[1];
+  document.getElementById('desc').innerHTML = top.slice(0, 2).map(k =>
+    `<p><b>${T[k][0]}</b> ${T[k][1]}<br><span class="legend">관련 직업 예: ${T[k][2]}</span></p>`).join('') +
+    (s[top[0]] - s[top[5]] < 15 ? '<p class="legend">여섯 유형 점수 차이가 작아요. 아직 흥미가 넓게 열려 있다는 뜻일 수 있으니 다양한 경험을 해 보세요.</p>' : '');
+}
+render();
+</script>
+</body>
+</html>

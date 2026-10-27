@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나의 하루 균형표</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600&family=Gowun+Batang:wght@700&display=swap">
+<style>
+  :root { --bg:#F3F6F5; --card:#fff; --ink:#1D2B2A; --muted:#5E6E6C; --line:#D7E0DE;
+    --sleep:#5B6C9A; --study:#23756B; --work:#D08B2E; --leisure:#C2507A; --etc:#9AA7A5; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans KR", sans-serif; padding:24px 16px 48px }
+  main { max-width:880px; margin:0 auto; display:grid; gap:20px }
+  h1 { font:700 1.8rem "Gowun Batang", serif; margin:0 }
+  .sub { color:var(--muted); margin:4px 0 0 }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; display:grid; gap:12px }
+  h2 { margin:0; font-size:1.1rem }
+  .row { display:grid; grid-template-columns:7.5em 1fr 3.2em; align-items:center; gap:10px }
+  .row b { display:flex; align-items:center; gap:6px; font-weight:600 }
+  .dot { width:12px; height:12px; border-radius:50% }
+  input[type=range] { width:100% }
+  .pie { width:180px; height:180px; border-radius:50%; margin:4px auto; position:relative }
+  .pie::after { content:attr(data-total); position:absolute; inset:45px; background:var(--card); border-radius:50%;
+    display:grid; place-items:center; font-weight:600; color:var(--muted) }
+  .warn { color:#B23A3A; font-weight:600 }
+  .note { background:#E7F1EF; border-radius:10px; padding:16px; white-space:pre-line }
+  textarea { width:100%; min-height:90px; font:inherit; padding:10px; border:1px solid var(--line); border-radius:8px }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>나의 하루 균형표</h1>
+    <p class="sub">[9진로01-04] 일과 여가 · 평일 하루 24시간을 "지금"과 "바라는 모습"으로 나눠 비교해 보세요.</p>
+  </header>
+  <div class="grid">
+    <section id="now"><h2>지금 나의 하루</h2></section>
+    <section id="want"><h2>내가 바라는 하루</h2></section>
+  </div>
+  <section>
+    <h2>비교해 보니</h2>
+    <div class="note" id="feedback"></div>
+    <label for="reflect"><b>나에게 여가란? 일(공부)과 여가가 어떻게 서로 도울까?</b></label>
+    <textarea id="reflect" placeholder="예) 운동을 하고 나면 공부할 때 집중이 더 잘 된다."></textarea>
+  </section>
+</main>
+<script>
+const CATS = [
+  ['sleep','수면',8], ['study','학교·공부',9], ['work','일·집안일',1], ['leisure','여가·취미',3], ['etc','이동·식사·기타',3]
+];
+const state = { now:{}, want:{} };
+CATS.forEach(([k,,h]) => { state.now[k] = h; state.want[k] = h; });
+state.want.leisure = 4; state.want.study = 8;
+
+function build(which) {
+  const box = document.getElementById(which);
+  CATS.forEach(([k,label]) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<b><span class="dot" style="background:var(--${k})"></span>${label}</b>
+      <input type="range" min="0" max="16" step="0.5" id="${which}-${k}" aria-label="${label}">
+      <span id="${which}-${k}-v"></span>`;
+    box.appendChild(row);
+    const input = row.querySelector('input');
+    input.value = state[which][k];
+    input.oninput = () => { state[which][k] = +input.value; render(); };
+  });
+  box.insertAdjacentHTML('beforeend', `<div class="pie" id="${which}-pie"></div><p id="${which}-msg"></p>`);
+}
+
+function total(which) { return CATS.reduce((s,[k]) => s + state[which][k], 0); }
+
+function render() {
+  ['now','want'].forEach(which => {
+    let acc = 0;
+    const t = total(which);
+    const stops = CATS.map(([k]) => {
+      const from = acc / 24 * 360; acc += state[which][k];
+      document.getElementById(`${which}-${k}-v`).textContent = state[which][k] + 'h';
+      return `var(--${k}) ${from}deg ${acc / 24 * 360}deg`;
+    });
+    const pie = document.getElementById(`${which}-pie`);
+    pie.style.background = `conic-gradient(${stops.join(',')}, #eee 0)`;
+    pie.dataset.total = t + ' / 24h';
+    const msg = document.getElementById(`${which}-msg`);
+    msg.className = t === 24 ? '' : 'warn';
+    msg.textContent = t === 24 ? '24시간이 딱 맞아요.' : t > 24 ? `${t - 24}시간 넘쳤어요. 줄여 보세요.` : `${24 - t}시간이 비어 있어요.`;
+  });
+  const lines = [];
+  CATS.forEach(([k,label]) => {
+    const d = state.want[k] - state.now[k];
+    if (d) lines.push(`• ${label}: ${d > 0 ? d + '시간 늘리고 싶어요' : -d + '시간 줄이고 싶어요'}`);
+  });
+  const ratio = state.now.leisure / Math.max(1, state.now.study + state.now.work);
+  lines.push(ratio < 0.2 ? '\n지금은 일·공부에 비해 여가가 적은 편이에요. 짧아도 꾸준한 여가가 에너지를 채워 줘요.'
+                         : '\n여가 시간을 어느 정도 확보하고 있어요. 그 시간이 어떤 의미인지 적어 보세요.');
+  document.getElementById('feedback').textContent = lines.join('\n');
+}
+build('now'); build('want'); render();
+</script>
+</body>
+</html>

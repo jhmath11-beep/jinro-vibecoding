@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진로 결정 저울</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600&family=Gowun+Batang:wght@700&display=swap">
+<style>
+  :root { --bg:#F3F6F5; --card:#fff; --ink:#1D2B2A; --muted:#5E6E6C; --line:#D7E0DE; --accent:#23756B; --alt:#B5603A; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans KR", sans-serif; padding:24px 16px 48px }
+  main { max-width:1000px; margin:0 auto; display:grid; gap:18px }
+  h1 { font:700 1.8rem "Gowun Batang", serif; margin:0 }
+  h2 { margin:0 0 4px; font-size:1.1rem }
+  .sub, .muted { color:var(--muted); margin:4px 0 10px }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; min-width:0 }
+  .wrap { overflow-x:auto }
+  table { border-collapse:collapse; width:100%; min-width:560px }
+  th, td { border-bottom:1px solid var(--line); padding:6px; text-align:center }
+  th:first-child, td:first-child { text-align:left }
+  input, select, textarea { font:inherit; border:1px solid var(--line); border-radius:6px; padding:6px; width:100% }
+  td input[type=number], td select { max-width:70px }
+  .bars { display:grid; gap:8px }
+  .bar { display:grid; grid-template-columns:9em 1fr 3.5em; gap:10px; align-items:center }
+  .bar div { height:14px; background:#E7F1EF; border-radius:7px }
+  .bar i { display:block; height:100%; border-radius:7px; background:var(--muted) }
+  .bar.first i { background:var(--accent) } .bar.second i { background:var(--alt) }
+  .paths { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px }
+  .path { border:2px solid var(--accent); border-radius:12px; padding:16px; display:grid; gap:8px }
+  .path.alt { border-color:var(--alt) }
+  .path label { display:grid; gap:2px; font-size:.9rem; font-weight:600 }
+  button { font:inherit; border:0; background:var(--ink); color:#fff; border-radius:8px; padding:8px 16px; cursor:pointer }
+  pre { white-space:pre-wrap; background:#E7F1EF; padding:12px; border-radius:8px; font:inherit }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>진로 결정 저울</h1>
+    <p class="sub">[9진로03-01·03-02] 후보 직업을 기준별로 따져 보고, 우선 경로와 대안 경로를 세워 봅니다. 입력한 내용은 이 기기 브라우저에만 저장됩니다.</p>
+  </header>
+  <section>
+    <h2>1. 후보와 기준 정하기</h2>
+    <p class="muted">중요도(1~5)는 나에게 그 기준이 얼마나 중요한지, 칸 점수(1~5)는 그 직업이 기준에 얼마나 맞는지입니다.</p>
+    <div class="wrap"><table id="matrix"></table></div>
+  </section>
+  <section>
+    <h2>2. 저울 결과</h2>
+    <div class="bars" id="bars"></div>
+  </section>
+  <section>
+    <h2>3. 진로 경로 세우기</h2>
+    <p class="muted">1위는 우선 경로, 2위는 대안 경로입니다. 상황이 바뀌면 경로도 바뀔 수 있어요.</p>
+    <div class="paths" id="paths"></div>
+  </section>
+  <section>
+    <h2>4. 정리하기</h2>
+    <button id="copy">결과를 글로 복사</button>
+    <pre id="summary"></pre>
+  </section>
+</main>
+<script>
+const KEY = 'jinro-decision-v2'; // 경로는 후보 순번으로 저장 (이름을 바꿔도 유지)
+const DEFAULT = {
+  jobs: ['UX 디자이너', '데이터 분석가', '사회복지사'],
+  criteria: [['흥미', 5], ['적성(잘하는 것)', 4], ['가치관', 4], ['미래 전망', 3], ['준비 가능성', 3], ['일과 삶의 균형', 2]],
+  scores: [[5, 3, 4], [4, 4, 3], [3, 3, 5], [4, 5, 3], [3, 3, 4], [3, 3, 3]],
+  paths: {},
+};
+let d;
+try { d = JSON.parse(localStorage.getItem(KEY)) || structuredClone(DEFAULT); } catch { d = structuredClone(DEFAULT); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const STEPS = [['high', '고등학교 (유형·선택 과목)'], ['after', '고등학교 졸업 후 (학과·훈련·취업)'], ['goal', '직업 목표와 첫 직장 모습'], ['now', '지금 당장 할 일 1가지']];
+
+function matrix() {
+  const opts = v => [1, 2, 3, 4, 5].map(n => `<option ${n === v ? 'selected' : ''}>${n}</option>`).join('');
+  document.getElementById('matrix').innerHTML =
+    `<tr><th>기준</th><th>중요도</th>${d.jobs.map((j, c) => `<th><input data-job="${c}" value="${esc(j)}" aria-label="후보 ${c + 1}"></th>`).join('')}</tr>` +
+    d.criteria.map(([name, w], r) => `<tr><td><input data-crit="${r}" value="${esc(name)}" aria-label="기준 ${r + 1}"></td>
+      <td><select data-w="${r}" aria-label="중요도">${opts(w)}</select></td>
+      ${d.jobs.map((_, c) => `<td><select data-s="${r},${c}" aria-label="점수">${opts(d.scores[r][c])}</select></td>`).join('')}</tr>`).join('');
+}
+document.getElementById('matrix').addEventListener('input', e => {
+  const t = e.target, ds = t.dataset;
+  if (ds.job) d.jobs[ds.job] = t.value;
+  if (ds.crit) d.criteria[ds.crit][0] = t.value;
+  if (ds.w) d.criteria[ds.w][1] = +t.value;
+  if (ds.s) { const [r, c] = ds.s.split(',').map(Number); d.scores[r][c] = +t.value; }
+  save(); results();
+});
+
+function totals() {
+  const maxSum = d.criteria.reduce((a, [, w]) => a + w * 5, 0);
+  return d.jobs.map((job, c) => ({ job, c, pct: Math.round(d.criteria.reduce((a, [, w], r) => a + w * d.scores[r][c], 0) / maxSum * 100) }))
+    .sort((a, b) => b.pct - a.pct);
+}
+
+function results() {
+  const t = totals();
+  document.getElementById('bars').innerHTML = t.map((x, i) =>
+    `<div class="bar ${['first', 'second'][i] || ''}"><b>${esc(x.job)}</b><div><i style="width:${x.pct}%"></i></div><span>${x.pct}점</span></div>`).join('');
+  const box = document.getElementById('paths');
+  const focused = document.activeElement?.id;
+  box.innerHTML = t.slice(0, 2).map((x, i) => {
+    const p = d.paths[x.c] || {};
+    return `<div class="path ${i ? 'alt' : ''}"><h2>${i ? '대안 경로' : '우선 경로'}: ${esc(x.job)}</h2>
+      ${STEPS.map(([k, label]) => `<label>${label}<textarea id="p-${i}-${k}" data-c="${x.c}" data-k="${k}" rows="2">${esc(p[k] || '')}</textarea></label>`).join('')}</div>`;
+  }).join('');
+  if (focused) document.getElementById(focused)?.focus();
+  summary(t);
+}
+document.getElementById('paths').addEventListener('input', e => {
+  const { c, k } = e.target.dataset;
+  (d.paths[c] ||= {})[k] = e.target.value;
+  save(); summary(totals());
+});
+
+function summary(t) {
+  const lines = ['[나의 진로 결정 저울]', ...t.map((x, i) => `${i + 1}위 ${x.job} (${x.pct}점)`), ''];
+  t.slice(0, 2).forEach((x, i) => {
+    lines.push(`${i ? '대안' : '우선'} 경로 - ${x.job}`);
+    STEPS.forEach(([k, label]) => lines.push(`  · ${label}: ${(d.paths[x.c] || {})[k] || '(아직 비어 있음)'}`));
+  });
+  document.getElementById('summary').textContent = lines.join('\n');
+}
+document.getElementById('copy').onclick = async e => {
+  try { await navigator.clipboard.writeText(document.getElementById('summary').textContent); e.target.textContent = '복사했어요'; }
+  catch { getSelection().selectAllChildren(document.getElementById('summary')); e.target.textContent = '선택됨 → Ctrl+C'; }
+};
+matrix(); results();
+</script>
+</body>
+</html>

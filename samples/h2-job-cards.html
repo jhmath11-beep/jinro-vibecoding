@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직업인 카드 탐색</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600&family=Gowun+Batang:wght@700&display=swap">
+<style>
+  :root { --bg:#F3F6F5; --card:#fff; --ink:#1D2B2A; --muted:#5E6E6C; --line:#D7E0DE; --accent:#23756B;
+    --R:#B5603A; --I:#3E6FA8; --A:#A2508F; --S:#3C8D5A; --E:#C78A1C; --C:#5F6B7A; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans KR", sans-serif; padding:24px 16px 48px }
+  main { max-width:1040px; margin:0 auto; display:grid; gap:18px }
+  h1 { font:700 1.8rem "Gowun Batang", serif; margin:0 }
+  .sub { color:var(--muted); margin:4px 0 0 }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center }
+  .bar button { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 14px; font:inherit; cursor:pointer }
+  .bar button[aria-pressed=true] { background:var(--ink); color:#fff; border-color:var(--ink) }
+  .bar input { flex:1 1 200px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; font:inherit }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:8px; align-content:start }
+  .card button { font:inherit; color:inherit; background:none; border:0; padding:0; text-align:left; cursor:pointer }
+  .card button:focus-visible { outline:3px solid var(--accent) }
+  .card .star { color:var(--accent); font-weight:600 }
+  .card h3 { margin:0; font-size:1.1rem }
+  .tags { display:flex; gap:4px }
+  .tag { color:#fff; font-size:.75rem; font-weight:600; border-radius:4px; padding:1px 7px }
+  .back { display:none; font-size:.92rem }
+  .card.open .back { display:block }
+  .card.open .hint { display:none }
+  .hint { color:var(--muted); font-size:.85rem }
+  .back dt { font-weight:600; color:var(--accent); margin-top:6px }
+  .back dd { margin:0 }
+  .mine { background:#E7F1EF; border-radius:12px; padding:16px }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>직업인 카드 탐색</h1>
+    <p class="sub">[9진로01-01·01-03] 카드를 눌러 하는 일과 "함께 일하고 싶은 직업인의 자세"를 확인하고, 마음에 드는 카드를 골라 보세요.</p>
+  </header>
+  <div class="bar" id="filters"></div>
+  <div class="bar"><input id="q" type="search" placeholder="직업 이름이나 역량으로 검색 (예: 공감, 코딩)"></div>
+  <div class="cards" id="cards"></div>
+  <div class="mine" id="mine">별표(★)를 누른 카드가 여기에 모여요.</div>
+</main>
+<script>
+const TYPES = { R:'현실형', I:'탐구형', A:'예술형', S:'사회형', E:'진취형', C:'관습형' };
+// [직업, 흥미유형, 하는 일, 필요한 역량, 함께 일하고 싶은 자세]
+const JOBS = [
+  ['소방관','RS','화재 진압, 구조·구급 활동, 화재 예방 점검을 한다.','체력, 침착함, 팀워크','위험한 순간에도 동료와 시민의 안전을 먼저 챙긴다.'],
+  ['자동차 정비사','RC','자동차를 점검하고 고장 난 부품을 수리·교체한다.','기계 이해, 꼼꼼함, 문제 해결','고객이 이해할 수 있게 고장 원인을 설명한다.'],
+  ['드론 조종사','RI','드론으로 촬영·측량·방제 등 작업을 수행한다.','공간 감각, 안전 의식, 기기 조작','비행 규칙을 지키고 안전을 확인한 뒤 움직인다.'],
+  ['요리사','RA','메뉴를 개발하고 재료를 손질해 음식을 만든다.','손재주, 위생 관념, 창의성','바쁜 주방에서도 위생과 약속 시간을 지킨다.'],
+  ['데이터 분석가','IC','데이터를 모으고 분석해 의사결정에 필요한 근거를 만든다.','통계, 코딩, 논리적 사고','숫자 뒤에 숨은 의미를 쉽게 설명해 준다.'],
+  ['연구원(생명과학)','IR','생명 현상을 실험·연구해 새로운 지식과 기술을 만든다.','탐구심, 끈기, 기록 습관','실패한 실험도 정직하게 기록하고 공유한다.'],
+  ['의사','IS','환자를 진찰·진단하고 치료한다.','과학 지식, 판단력, 공감','환자의 이야기를 끝까지 듣고 존중한다.'],
+  ['소프트웨어 개발자','IC','프로그램과 앱을 설계하고 코드를 작성·테스트한다.','코딩, 논리, 협업','코드를 동료가 읽기 쉽게 쓰고 질문을 반긴다.'],
+  ['기후변화 전문가','IS','기후 자료를 분석해 대응 정책과 방안을 제안한다.','과학 지식, 데이터 해석, 소통','어려운 내용을 시민이 알기 쉽게 전한다.'],
+  ['웹툰 작가','AE','이야기를 구상하고 그림으로 연재 만화를 만든다.','그림, 스토리텔링, 마감 관리','마감을 지키고 피드백을 열린 마음으로 받는다.'],
+  ['UX 디자이너','AI','사용자가 편하게 쓸 수 있는 화면과 서비스 흐름을 설계한다.','관찰력, 디자인, 공감','내 취향보다 사용자의 불편을 먼저 본다.'],
+  ['작곡가','AE','곡을 만들고 편곡해 음반·영상 음악을 제작한다.','음악성, 창의성, 끈기','함께 만드는 사람의 의견을 곡에 담는다.'],
+  ['영상 크리에이터','AE','기획·촬영·편집해 영상 콘텐츠를 만든다.','기획력, 편집 기술, 저작권 이해','다른 사람의 저작권과 초상권을 존중한다.'],
+  ['교사','SA','학생을 가르치고 성장과 진로를 돕는다.','설명력, 공감, 책임감','학생 한 명 한 명의 속도를 기다려 준다.'],
+  ['사회복지사','SE','도움이 필요한 사람에게 복지 서비스를 연결하고 상담한다.','공감, 상담, 행정 능력','상대의 사정을 함부로 판단하지 않는다.'],
+  ['간호사','SR','환자를 돌보고 의사의 진료를 돕는다.','책임감, 체력, 정확성','교대할 때 정보를 빠짐없이 정확히 넘긴다.'],
+  ['상담심리사','SI','심리적 어려움이 있는 사람을 상담하고 회복을 돕는다.','경청, 공감, 비밀 유지','들은 이야기의 비밀을 지킨다.'],
+  ['물리치료사','SR','운동·도수 치료로 몸의 기능 회복을 돕는다.','인체 지식, 체력, 격려','환자가 포기하지 않도록 작은 변화를 칭찬한다.'],
+  ['창업가(스타트업 대표)','EA','문제를 찾아 해결하는 사업을 만들고 팀을 이끈다.','도전 정신, 리더십, 실행력','실패를 남 탓하지 않고 팀과 함께 다시 시도한다.'],
+  ['마케터','EA','상품·서비스를 알리는 전략을 세우고 실행한다.','기획력, 트렌드 감각, 분석','과장 없이 정직하게 알린다.'],
+  ['변호사','EI','법률 상담을 하고 소송에서 의뢰인을 대리한다.','논리, 글쓰기, 윤리 의식','의뢰인에게 불리한 사실도 솔직히 설명한다.'],
+  ['회계사','CI','기업의 재무 상태를 기록·감사하고 세무를 돕는다.','숫자 감각, 정확성, 정직','숫자를 정확하고 투명하게 다룬다.'],
+  ['사서','CS','도서관 자료를 관리하고 이용자에게 정보를 찾아 준다.','정리 능력, 정보 탐색, 친절','누구에게나 친절하게 자료를 안내한다.'],
+  ['공무원(행정)','CS','법과 규정에 따라 행정 업무를 처리하고 주민을 돕는다.','규칙 준수, 문서 작성, 책임감','공정하게, 정해진 절차대로 일한다.'],
+];
+let filter = '';
+const picked = new Set(), opened = new Set();
+const filters = document.getElementById('filters');
+[['','전체'], ...Object.entries(TYPES)].forEach(([k,v]) => {
+  const b = document.createElement('button');
+  b.textContent = k ? `${k} ${v}` : v;
+  b.setAttribute('aria-pressed', k === filter);
+  b.onclick = () => { filter = k; filters.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
+  filters.appendChild(b);
+});
+document.getElementById('q').oninput = render;
+
+function render() {
+  const q = document.getElementById('q').value.trim();
+  const box = document.getElementById('cards');
+  box.innerHTML = '';
+  JOBS.filter(j => (!filter || j[1].includes(filter)) && (!q || j.join(' ').includes(q))).forEach(([name, code, what, skill, attitude]) => {
+    const c = document.createElement('article');
+    c.className = opened.has(name) ? 'card open' : 'card';
+    c.innerHTML = `<div class="tags">${[...code].map(t => `<span class="tag" style="background:var(--${t})">${TYPES[t]}</span>`).join('')}</div>
+      <h3><button data-flip aria-expanded="${opened.has(name)}">${picked.has(name) ? '★ ' : ''}${name}</button></h3><span class="hint">이름을 눌러 뒷면 보기</span>
+      <dl class="back"><dt>하는 일</dt><dd>${what}</dd><dt>필요한 역량</dt><dd>${skill}</dd>
+      <dt>함께 일하고 싶은 자세</dt><dd>${attitude}</dd></dl>
+      <span class="back"><button class="star" data-star>${picked.has(name) ? '★ 고른 카드에서 빼기' : '☆ 이 카드 고르기'}</button></span>`;
+    c.dataset.name = name;
+    c.querySelector('[data-star]').onclick = () => {
+      picked.has(name) ? picked.delete(name) : picked.add(name); render();
+      document.querySelector(`[data-name="${name}"] [data-star]`)?.focus();
+    };
+    c.querySelector('[data-flip]').onclick = e => {
+      opened.has(name) ? opened.delete(name) : opened.add(name);
+      c.classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', c.classList.contains('open'));
+    };
+    box.appendChild(c);
+  });
+  document.getElementById('mine').textContent = picked.size
+    ? `고른 직업: ${[...picked].join(', ')} → 이 직업인들의 공통점은 무엇인가요?`
+    : '별표(★)를 누른 카드가 여기에 모여요.';
+}
+render();
+</script>
+</body>
+</html>
